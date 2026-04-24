@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Construction Kit v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Playfair+Display:wght@400;600;700&family=Lora:wght@400;500;600&family=Montserrat:wght@300;400;500;600;700&family=EB+Garamond:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:2px}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:#e0e0e0;border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#222;cursor:pointer;transition:transform 0.1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+input[type=color]{-webkit-appearance:none;border:none;width:24px;height:24px;border-radius:50%;cursor:pointer;padding:0;background:none}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0;border-radius:50%}
+input[type=color]::-webkit-color-swatch{border:none;border-radius:50%}
+.editable{transition:background 0.1s,box-shadow 0.1s;border-radius:2px}
+.editable:hover{background:rgba(59,91,219,0.06);box-shadow:0 0 0 1px rgba(59,91,219,0.18)}
+@media print{
+  #panel{display:none!important}
+  #app-shell{display:block!important}
+  #preview-wrap{padding:0!important;background:#fff!important;overflow:visible!important;height:auto!important}
+  .cv-paper{box-shadow:none!important}
+  @page{margin:0;size:A4}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ── Shared data, constants, and UI primitives ── -->
+<script type="text/babel">
+// cv2-shared.jsx — data, constants, shared UI primitives
+
+const INITIAL_CV = {
+  name: "Alexandra Morgan",
+  title: "Senior Product Designer",
+  email: "alex@morgan.co", phone: "+1 555 012 3456",
+  location: "San Francisco, CA", website: "alexmorgan.co",
+  summary: "Product designer with 8+ years crafting digital experiences for high-growth startups and Fortune 500 companies. Passionate about design systems, accessibility, and the intersection of form and function.",
+  experience: [
+    { role:"Senior Product Designer", company:"Meridian Labs", period:"2021 — Present", location:"San Francisco, CA",
+      bullets:["Led redesign of core product serving 2M+ users, increasing retention by 34%","Built and maintained a design system adopted across 8 product teams","Mentored 3 junior designers; established weekly critique culture"] },
+    { role:"Product Designer", company:"Volta Systems", period:"2018 — 2021", location:"New York, NY",
+      bullets:["Designed end-to-end flows for a B2B SaaS platform with 50k enterprise users","Shipped 12 major features on schedule in tight partnership with engineering","Conducted 40+ user interviews to inform product strategy"] },
+    { role:"UX Designer", company:"Paperplane Studio", period:"2016 — 2018", location:"Remote",
+      bullets:["Client work spanning fintech, healthtech, and e-commerce verticals","Delivered design systems, prototypes, and research decks for 14 clients"] },
+  ],
+  education: [{ degree:"B.F.A. Interaction Design", school:"California College of the Arts", period:"2012 — 2016", note:"Summa Cum Laude" }],
+  skills: ["Figma","Framer","Prototyping","User Research","Design Systems","Accessibility","React","Motion Design","SQL","A/B Testing"],
+  languages: ["English (Native)","French (Conversational)","Spanish (Basic)"],
+  awards: ["SXSW Design Award 2023","Fast Company Innovation by Design 2022"],
+  customSections: [],
+  sectionTitles: {
+    summary:"Summary", experience:"Experience", education:"Education",
+    skills:"Skills", languages:"Languages", awards:"Awards", contact:"Contact",
+  },
+};
+
+const SCHEMES = {
+  slate:  {accent:"#3B5BDB",text:"#141428",subtle:"#64748b",app:"#e4e6f0"},
+  ember:  {accent:"#c2410c",text:"#1c0f09",subtle:"#78716c",app:"#ede6df"},
+  forest: {accent:"#16803d",text:"#0e1a11",subtle:"#5a7263",app:"#dde8df"},
+  plum:   {accent:"#7c3aed",text:"#18082e",subtle:"#7c6d8a",app:"#e8e0f5"},
+  noir:   {accent:"#111111",text:"#0a0a0a",subtle:"#6b6b6b",app:"#d8d8d8"},
+  copper: {accent:"#9a3412",text:"#1c0e09",subtle:"#a37060",app:"#ede6de"},
+  teal:   {accent:"#0f766e",text:"#0d1a18",subtle:"#567570",app:"#daeae8"},
+  rose:   {accent:"#be185d",text:"#1a0811",subtle:"#9d7080",app:"#ede0e8"},
+};
+
+const PAPER_TONES = {
+  white:    {bg:"#ffffff",  dark:false},
+  ivory:    {bg:"#fdf9f0",  dark:false},
+  warm:     {bg:"#faf3e8",  dark:false},
+  cool:     {bg:"#f2f5fb",  dark:false},
+  dark:     {bg:"#1b1b2e",  dark:true },
+  charcoal: {bg:"#1e2433",  dark:true },
+};
+
+const FONTS = {
+  modern:    {h:"'DM Sans',sans-serif",      b:"'DM Sans',sans-serif",       hw:600, ls:"0em"    },
+  editorial: {h:"'Playfair Display',serif",  b:"'Source Serif 4',serif",     hw:700, ls:"0em"    },
+  classic:   {h:"'EB Garamond',serif",       b:"'EB Garamond',serif",        hw:600, ls:"0.01em" },
+  geometric: {h:"'Montserrat',sans-serif",   b:"'Montserrat',sans-serif",    hw:700, ls:"-0.01em"},
+  refined:   {h:"'Cormorant Garamond',serif",b:"'DM Sans',sans-serif",       hw:500, ls:"0.02em" },
+  humanist:  {h:"'Lora',serif",              b:"'Lora',serif",               hw:600, ls:"0em"    },
+};
+
+const SP = {compact:0.72, normal:1, spacious:1.38};
+
+const DEFAULT_SETTINGS = {
+  layout:"sidebar-left", scheme:"slate", font:"modern", fontSize:13, nameSize:30,
+  headerAlign:"left", showPhoto:false, photoShape:"circle", headerStyle:"standard",
+  paperTone:"white", divider:"line", density:"normal", skillsDisplay:"tags",
+  bulletStyle:"dash", datePos:"right", shadow:"medium", sidebarBg:"accent",
+  sidebarWidth:30, sectionCaps:true, showIcons:false,
+  showSummary:true, showExperience:true, showEducation:true,
+  showSkills:true, showLanguages:true, showAwards:false,
+  jobSeparator:false, verboseMode:true, customAccent:null,
+  sectionOrder:["summary","experience","education","skills","languages","awards"],
+  zoom:100,
+};
+
+function lightenHex(hex,pct) {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return hex;
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  const m=c=>Math.round(c+(255-c)*pct/100);
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+}
+
+// ─── Primitives ─────────────────────────────────────────────────────
+
+function Seg({opts,val,set,xs}) {
+  return (
+    <div style={{display:"flex",gap:2,background:"#efefef",borderRadius:7,padding:2}}>
+      {opts.map(o=>(
+        <button key={o.v} onClick={()=>set(o.v)} style={{
+          border:"none",padding:xs?"2px 6px":"3px 9px",borderRadius:5,
+          fontSize:xs?9:10.5,fontFamily:"'DM Sans',sans-serif",
+          background:val===o.v?"#fff":"transparent",color:val===o.v?"#111":"#888",
+          boxShadow:val===o.v?"0 1px 4px rgba(0,0,0,0.13)":"none",
+          fontWeight:val===o.v?600:400,transition:"all 0.12s",whiteSpace:"nowrap",
+        }}>{o.l}</button>
+      ))}
+    </div>
+  );
+}
+
+function Toggle({val,set}) {
+  return (
+    <div onClick={()=>set(!val)} style={{width:30,height:17,borderRadius:9,
+      background:val?"#222":"#ccc",cursor:"pointer",position:"relative",
+      transition:"background 0.18s",flexShrink:0}}>
+      <div style={{position:"absolute",top:2,left:val?13:2,width:13,height:13,
+        borderRadius:"50%",background:"#fff",transition:"left 0.18s",
+        boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+    </div>
+  );
+}
+
+function Row({label,children,sub}) {
+  return (
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,gap:8}}>
+      <div>
+        <div style={{fontSize:11.5,color:"#444"}}>{label}</div>
+        {sub&&<div style={{fontSize:9.5,color:"#aaa",marginTop:1}}>{sub}</div>}
+      </div>
+      <div style={{display:"flex",gap:4,alignItems:"center",flexShrink:0}}>{children}</div>
+    </div>
+  );
+}
+
+function TSection({title,children}) {
+  return (
+    <div style={{borderBottom:"1px solid #ebebeb",paddingBottom:16}}>
+      <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.13em",textTransform:"uppercase",color:"#b0b0b0",marginBottom:12}}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function SliderRow({label,val,commit,min,max,step=1,unit=""}) {
+  const [live,setLive] = React.useState(val);
+  React.useEffect(()=>setLive(val),[val]);
+  return (
+    <Row label={label} sub={live+unit}>
+      <input type="range" min={min} max={max} step={step} value={live}
+        onChange={e=>setLive(+e.target.value)}
+        onMouseUp={e=>commit(+e.target.value)}
+        onTouchEnd={e=>commit(+e.target.value)}
+        style={{width:100}}/>
+    </Row>
+  );
+}
+
+// Inline-editable text — click to edit
+function EditableText({value,onChange,style,multiline,tag:Tag="span"}) {
+  const [editing,setEditing] = React.useState(false);
+  const [draft,setDraft]     = React.useState(value);
+  const ref = React.useRef(null);
+  React.useEffect(()=>{ if(!editing) setDraft(value); },[value,editing]);
+  React.useEffect(()=>{ if(editing&&ref.current) ref.current.focus(); },[editing]);
+  const save=()=>{ setEditing(false); if(draft!==value) onChange(draft); };
+  const cancel=()=>{ setEditing(false); setDraft(value); };
+  if(editing) {
+    const El=multiline?"textarea":"input";
+    return <El ref={ref} value={draft} rows={multiline?3:undefined}
+      onChange={e=>setDraft(e.target.value)}
+      onBlur={save}
+      onKeyDown={e=>{ if(!multiline&&e.key==="Enter") save(); if(e.key==="Escape") cancel(); }}
+      style={{...style,border:"none",outline:"none",
+        background:"rgba(59,91,219,0.07)",
+        boxShadow:"0 0 0 1.5px rgba(59,91,219,0.4)",
+        borderRadius:3,fontFamily:"inherit",fontSize:"inherit",
+        color:"inherit",fontWeight:"inherit",lineHeight:"inherit",
+        width:"100%",padding:"1px 4px",
+        resize:multiline?"vertical":"none",boxSizing:"border-box",
+        minHeight:multiline?"60px":undefined}}
+    />;
+  }
+  return (
+    <Tag onClick={()=>{setDraft(value);setEditing(true);}}
+      className="editable" style={{...style,cursor:"text"}} title="Click to edit">
+      {value}
+    </Tag>
+  );
+}
+
+// Editable list with add/delete per item
+function EditableList({items,onChange,itemStyle,bullet,accentColor,maxVisible}) {
+  const [hov,setHov] = React.useState(null);
+  const vis = maxVisible ? items.slice(0,maxVisible) : items;
+  const upd = (i,v)=>{ const n=[...items]; n[i]=v; onChange(n); };
+  const del = (i)=>onChange(items.filter((_,j)=>j!==i));
+  const add = ()=>onChange([...items,"New item"]);
+  return (
+    <div>
+      {vis.map((item,i)=>(
+        <div key={i} style={{display:"flex",gap:6,marginBottom:3,alignItems:"flex-start"}}
+          onMouseEnter={()=>setHov(i)} onMouseLeave={()=>setHov(null)}>
+          {bullet&&<span style={{color:accentColor,flexShrink:0,minWidth:8,...itemStyle,marginTop:1}}>{bullet}</span>}
+          <EditableText value={item} onChange={v=>upd(i,v)} style={{flex:1,...itemStyle,display:"inline-block"}}/>
+          {hov===i&&<button onClick={()=>del(i)} style={{border:"none",background:"none",cursor:"pointer",color:"rgba(0,0,0,0.25)",fontSize:14,padding:0,lineHeight:1,flexShrink:0,marginTop:-1}}>×</button>}
+        </div>
+      ))}
+      {maxVisible&&items.length>maxVisible&&
+        <div style={{...itemStyle,opacity:0.4,fontSize:"0.82em",marginTop:2,fontStyle:"italic"}}>+{items.length-maxVisible} more hidden</div>
+      }
+      <button onClick={add} style={{border:"none",background:"none",cursor:"pointer",color:"#aaa",fontSize:10,fontFamily:"'DM Sans',sans-serif",padding:"3px 0",marginTop:2,display:"flex",alignItems:"center",gap:3}}>
+        <span style={{fontSize:13,lineHeight:1}}>+</span> add
+      </button>
+    </div>
+  );
+}
+
+// Photo upload component — click to pick, stores as data URL
+function PhotoUpload({size, shape, photoUrl, onUpload, dark=false, ac="#3B5BDB"}) {
+  const ref = React.useRef(null);
+  const [hov, setHov] = React.useState(false);
+  const radius = shape==="circle" ? "50%" : shape==="rounded" ? size*0.16+"px" : "0";
+  const bg = photoUrl ? "transparent" : dark ? "rgba(255,255,255,0.18)" : `${ac}18`;
+  const border = dark ? "2px solid rgba(255,255,255,0.35)" : `2px solid ${ac}40`;
+  return (
+    <div style={{width:size,height:size,borderRadius:radius,background:bg,border,
+      overflow:"hidden",cursor:"pointer",position:"relative",flexShrink:0,
+      display:"flex",alignItems:"center",justifyContent:"center"}}
+      onClick={()=>ref.current?.click()}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      {photoUrl
+        ? <img src={photoUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>
+        : <span style={{fontSize:size*0.12,color:dark?"rgba(255,255,255,0.55)":ac,fontFamily:"monospace",userSelect:"none"}}>photo</span>
+      }
+      {hov&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.38)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:radius}}>
+        <span style={{color:"#fff",fontSize:size*0.13,fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>change</span>
+      </div>}
+      <input ref={ref} type="file" accept="image/*" style={{display:"none"}}
+        onChange={e=>{
+          const file=e.target.files[0]; if(!file) return;
+          const reader=new FileReader();
+          reader.onload=ev=>onUpload(ev.target.result);
+          reader.readAsDataURL(file);
+          e.target.value="";
+        }}/>
+    </div>
+  );
+}
+
+Object.assign(window,{
+  INITIAL_CV, SCHEMES, PAPER_TONES, FONTS, SP, DEFAULT_SETTINGS,
+  lightenHex, Seg, Toggle, Row, TSection, SliderRow, EditableText, EditableList, PhotoUpload,
+});
+</script>
+
+<!-- ── CV Preview component ── -->
+<script type="text/babel">
+// cv2-preview.jsx — CVPreview component
+
+// ── Small helpers local to preview ────────────────────────
+function IBtn({label, onClick, disabled, danger}) {
+  return (
+    <button onClick={e=>{e.stopPropagation();onClick();}} disabled={disabled} style={{
+      border:"none",background:"none",cursor:disabled?"default":"pointer",
+      color:disabled?"#ddd":danger?"#e53e3e":"#666",
+      fontSize:12,padding:"1px 3px",lineHeight:1,fontFamily:"inherit",
+      borderRadius:3,transition:"background 0.1s",
+    }}
+    onMouseEnter={e=>{if(!disabled)e.currentTarget.style.background="rgba(0,0,0,0.06)";}}
+    onMouseLeave={e=>{e.currentTarget.style.background="none";}}
+    >{label}</button>
+  );
+}
+
+function HoverToolbar({children}) {
+  return (
+    <div style={{position:"absolute",top:0,right:0,display:"flex",gap:1,
+      background:"rgba(255,255,255,0.97)",border:"1px solid #e0e0e0",
+      borderRadius:6,padding:"2px 3px",zIndex:20,
+      boxShadow:"0 2px 8px rgba(0,0,0,0.1)"}}>
+      {children}
+    </div>
+  );
+}
+
+function AddBtn({label, onClick}) {
+  const [hov,setHov] = React.useState(false);
+  return (
+    <button onClick={onClick}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{display:"block",width:"100%",textAlign:"left",border:`1px dashed ${hov?"#aaa":"#ddd"}`,
+        background:hov?"#fafafa":"transparent",borderRadius:5,padding:"5px 10px",
+        cursor:"pointer",color:"#aaa",fontSize:11,fontFamily:"'DM Sans',sans-serif",
+        marginTop:4,transition:"all 0.15s"}}>
+      {label}
+    </button>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────
+function CVPreview({s, cv, patchCV}) {
+  const sc  = SCHEMES[s.scheme];
+  const f   = FONTS[s.font];
+  const sp  = SP[s.density];
+  const accentBase = s.customAccent || sc.accent;
+  const pt  = PAPER_TONES[s.paperTone] || PAPER_TONES.white;
+  const isDark = pt.dark;
+  const paperBg  = pt.bg;
+  const textCol  = isDark ? "#e8e8f4" : sc.text;
+  const subCol   = isDark ? "rgba(230,230,255,0.48)" : sc.subtle;
+  const accent   = isDark ? lightenHex(accentBase, 35) : accentBase;
+
+  const [hovExp, setHovExp] = React.useState(null);
+  const [hovEdu, setHovEdu] = React.useState(null);
+  const [hovCs,  setHovCs]  = React.useState(null);
+
+  const isSidebar = s.layout==="sidebar-left"||s.layout==="sidebar-right";
+  const isSL = s.layout==="sidebar-left";
+  const sbIsDark = s.sidebarBg==="accent"||s.sidebarBg==="dark";
+  const sbBg  = {accent:accentBase,dark:isDark?"#0d0d1a":sc.text,light:isDark?"#2a2a3a":"#f2f2f2",white:isDark?"#1e1e30":"#fff"}[s.sidebarBg];
+  const sbText = sbIsDark?"#fff":textCol;
+  const sbSub  = sbIsDark?"rgba(255,255,255,0.58)":subCol;
+  const sbDiv  = sbIsDark?"rgba(255,255,255,0.38)":accent;
+
+  const shadowMap = {none:"none",soft:"0 2px 18px rgba(0,0,0,0.07)",medium:"0 6px 38px rgba(0,0,0,0.16)",dramatic:"0 12px 72px rgba(0,0,0,0.28)"};
+  const paper = {
+    fontFamily:f.b, fontSize:s.fontSize, color:textCol,
+    background:paperBg, width:"100%", maxWidth:800, minHeight:1050,
+    margin:"0 auto", transition:"background 0.3s", boxShadow:shadowMap[s.shadow],
+  };
+
+  // ── Section heading ──────────────────────────────────────
+  const SHd = ({t, onChange, col=textCol, div=accent, sm=false}) => {
+    const sz = sm ? s.fontSize*0.82 : s.fontSize*0.88;
+    const shStyle = {fontFamily:f.h,fontWeight:f.hw,fontSize:sz,
+      letterSpacing:s.sectionCaps?"0.11em":"0.01em",
+      textTransform:s.sectionCaps?"uppercase":"none",
+      color:col, display:"block"};
+    return (
+      <div style={{marginBottom:7*sp}}>
+        <div style={{marginBottom:5}}>
+          {onChange
+            ? <EditableText value={t} onChange={onChange} style={shStyle}/>
+            : <span style={shStyle}>{t}</span>}
+        </div>
+        {s.divider==="line"   && <div style={{height:1,background:div,opacity:0.3}}/>}
+        {s.divider==="thick"  && <div style={{height:3,width:28,background:div}}/>}
+        {s.divider==="double" && <><div style={{height:1,background:div,opacity:0.35}}/><div style={{height:1,background:div,opacity:0.12,marginTop:2}}/></>}
+        {s.divider==="dots"   && <div style={{letterSpacing:3,color:div,fontSize:7,lineHeight:1}}>{"· ".repeat(14)}</div>}
+      </div>
+    );
+  };
+
+  const sectionTitle = (key, fallback) => cv.sectionTitles?.[key] || fallback;
+  const setSectionTitle = (key, v) => patchCV(c=>{if(!c.sectionTitles)c.sectionTitles={};c.sectionTitles[key]=v;});
+
+  // ── Skills ───────────────────────────────────────────────
+  const Skills = ({skills, onChange, col=textCol, ac=accent}) => {
+    const [hovSk, setHovSk] = React.useState(null);
+    const upd = (i,v)=>{ const n=[...skills]; n[i]=v; onChange(n); };
+    const del = (i)=>onChange(skills.filter((_,j)=>j!==i));
+    const add = ()=>onChange([...skills,"Skill"]);
+
+    if(s.skillsDisplay==="tags") return (
+      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+        {skills.map((sk,i)=>(
+          <div key={i} style={{display:"inline-flex",alignItems:"center",gap:2,
+            fontSize:s.fontSize*0.82,padding:"2px 6px 2px 9px",borderRadius:99,
+            border:`1px solid ${ac}55`,color:col,background:`${ac}12`,position:"relative"}}
+            onMouseEnter={()=>setHovSk(i)} onMouseLeave={()=>setHovSk(null)}>
+            <EditableText value={sk} onChange={v=>upd(i,v)} style={{color:col}}/>
+            {hovSk===i&&<button onClick={()=>del(i)} style={{border:"none",background:"none",cursor:"pointer",color:ac,fontSize:12,padding:0,lineHeight:1,marginLeft:2}}>×</button>}
+          </div>
+        ))}
+        <button onClick={add} style={{fontSize:s.fontSize*0.82,padding:"2px 9px",borderRadius:99,border:`1px dashed ${ac}44`,color:ac,background:"transparent",cursor:"pointer",fontFamily:"inherit"}}>+</button>
+      </div>
+    );
+    if(s.skillsDisplay==="grid") return (
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 20px"}}>
+        {skills.map((sk,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:6}}
+            onMouseEnter={()=>setHovSk(i)} onMouseLeave={()=>setHovSk(null)}>
+            <div style={{width:4,height:4,borderRadius:"50%",background:ac,flexShrink:0}}/>
+            <EditableText value={sk} onChange={v=>upd(i,v)} style={{fontSize:s.fontSize*0.88,color:col,flex:1}}/>
+            {hovSk===i&&<button onClick={()=>del(i)} style={{border:"none",background:"none",cursor:"pointer",color:"rgba(0,0,0,0.25)",fontSize:13,padding:0,lineHeight:1}}>×</button>}
+          </div>
+        ))}
+        <button onClick={add} style={{fontSize:s.fontSize*0.82,padding:"1px 6px",borderRadius:99,border:`1px dashed ${ac}44`,color:ac,background:"transparent",cursor:"pointer",fontFamily:"inherit",justifySelf:"start"}}>+</button>
+      </div>
+    );
+    if(s.skillsDisplay==="bars") return (
+      <div style={{display:"flex",flexDirection:"column",gap:5*sp}}>
+        {skills.map((sk,i)=>(
+          <div key={i} onMouseEnter={()=>setHovSk(i)} onMouseLeave={()=>setHovSk(null)}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+              <EditableText value={sk} onChange={v=>upd(i,v)} style={{fontSize:s.fontSize*0.85,color:col}}/>
+              {hovSk===i&&<button onClick={()=>del(i)} style={{border:"none",background:"none",cursor:"pointer",color:"rgba(0,0,0,0.25)",fontSize:13,padding:0,lineHeight:1}}>×</button>}
+            </div>
+            <div style={{height:3,background:`${ac}20`,borderRadius:2}}>
+              <div style={{height:"100%",width:`${65+(i%5)*6}%`,background:ac,borderRadius:2}}/>
+            </div>
+          </div>
+        ))}
+        <button onClick={add} style={{border:"none",background:"none",cursor:"pointer",color:"#aaa",fontSize:10,fontFamily:"'DM Sans',sans-serif",padding:"2px 0",marginTop:2}}>+ add</button>
+      </div>
+    );
+    if(s.skillsDisplay==="inline") return (
+      <div style={{color:col,lineHeight:1.8,fontSize:s.fontSize*0.92,display:"flex",flexWrap:"wrap",gap:"0 4px"}}>
+        {skills.map((sk,i)=>(
+          <span key={i} onMouseEnter={()=>setHovSk(i)} onMouseLeave={()=>setHovSk(null)} style={{display:"inline-flex",alignItems:"center",gap:2}}>
+            <EditableText value={sk} onChange={v=>upd(i,v)} style={{color:col}}/>
+            {i<skills.length-1&&<span style={{opacity:0.4}}>{" · "}</span>}
+            {hovSk===i&&<button onClick={()=>del(i)} style={{border:"none",background:"none",cursor:"pointer",color:"rgba(0,0,0,0.3)",fontSize:12,padding:0,lineHeight:1}}>×</button>}
+          </span>
+        ))}
+        <button onClick={add} style={{border:"none",background:"none",cursor:"pointer",color:"#aaa",fontSize:10,fontFamily:"'DM Sans',sans-serif",padding:"0 4px"}}>+ add</button>
+      </div>
+    );
+    // list
+    return (
+      <div>
+        {skills.map((sk,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}
+            onMouseEnter={()=>setHovSk(i)} onMouseLeave={()=>setHovSk(null)}>
+            <span style={{color:ac}}>—</span>
+            <EditableText value={sk} onChange={v=>upd(i,v)} style={{flex:1,color:col,fontSize:s.fontSize*0.9}}/>
+            {hovSk===i&&<button onClick={()=>del(i)} style={{border:"none",background:"none",cursor:"pointer",color:"rgba(0,0,0,0.25)",fontSize:13,padding:0,lineHeight:1}}>×</button>}
+          </div>
+        ))}
+        <button onClick={add} style={{border:"none",background:"none",cursor:"pointer",color:"#aaa",fontSize:10,fontFamily:"'DM Sans',sans-serif",padding:"2px 0",marginTop:2}}>+ add</button>
+      </div>
+    );
+  };
+
+  const bullet = {dash:"–",dot:"•",arrow:"→",none:""}[s.bulletStyle];
+  const maxBullets = s.verboseMode ? undefined : 2;
+
+  // ── Experience item ──────────────────────────────────────
+  const Exp = ({item, idx}) => (
+    <div style={{marginBottom:14*sp}}>
+      <div style={{display:"flex",justifyContent:"space-between",
+        flexDirection:s.datePos==="below"?"column":"row",alignItems:"flex-start",gap:s.datePos==="below"?1:0}}>
+        <div style={{flex:1,minWidth:0}}>
+          <EditableText value={item.role} onChange={v=>patchCV(c=>{c.experience[idx].role=v;})}
+            style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.fontSize*1.05,color:textCol,lineHeight:1.2,display:"block"}}/>
+          <EditableText value={item.company} onChange={v=>patchCV(c=>{c.experience[idx].company=v;})}
+            style={{color:accent,fontSize:s.fontSize*0.9,fontWeight:500,display:"block",marginTop:1}}/>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
+          <EditableText value={item.period} onChange={v=>patchCV(c=>{c.experience[idx].period=v;})}
+            style={{fontSize:s.fontSize*0.82,color:subCol,whiteSpace:"nowrap",display:"block"}}/>
+          <EditableText value={item.location} onChange={v=>patchCV(c=>{c.experience[idx].location=v;})}
+            style={{fontSize:s.fontSize*0.8,color:subCol,display:"block"}}/>
+        </div>
+      </div>
+      <div style={{marginTop:5*sp}}>
+        <EditableList items={item.bullets} onChange={v=>patchCV(c=>{c.experience[idx].bullets=v;})}
+          bullet={bullet||undefined} accentColor={accent} maxVisible={maxBullets}
+          itemStyle={{fontSize:s.fontSize*0.92,color:textCol,lineHeight:1.55}}/>
+      </div>
+      {s.jobSeparator&&<div style={{marginTop:12*sp,height:1,background:isDark?"rgba(255,255,255,0.07)":accent+"14"}}/>}
+    </div>
+  );
+
+  // ── Sidebar ──────────────────────────────────────────────
+  const IC = s.showIcons;
+  const Sidebar = () => (
+    <div style={{padding:`${18*sp}px ${14*sp}px`,display:"flex",flexDirection:"column",gap:16*sp}}>
+      {s.showPhoto&&(
+        <div style={{display:"flex",justifyContent:"center",paddingBottom:4}}>
+          <PhotoUpload size={74} shape={s.photoShape} photoUrl={cv.photoUrl} onUpload={url=>patchCV(c=>{c.photoUrl=url;})} dark={sbIsDark} ac={accent}/>
+        </div>
+      )}
+      <div>
+        <SHd t={sectionTitle("contact","Contact")} onChange={v=>setSectionTitle("contact",v)} col={sbText} div={sbDiv} sm/>
+        <div style={{display:"flex",flexDirection:"column",gap:3.5,fontSize:s.fontSize*0.86,color:sbSub}}>
+          <span>{IC&&<span style={{color:sbDiv,marginRight:3}}>✉</span>}<EditableText value={cv.email}    onChange={v=>patchCV(c=>{c.email=v;})}    style={{display:"inline"}}/></span>
+          <span>{IC&&<span style={{color:sbDiv,marginRight:3}}>✆</span>}<EditableText value={cv.phone}    onChange={v=>patchCV(c=>{c.phone=v;})}    style={{display:"inline"}}/></span>
+          <span>{IC&&<span style={{color:sbDiv,marginRight:3}}>◎</span>}<EditableText value={cv.location} onChange={v=>patchCV(c=>{c.location=v;})} style={{display:"inline"}}/></span>
+          <span>{IC&&<span style={{color:sbDiv,marginRight:3}}>⊕</span>}<EditableText value={cv.website}  onChange={v=>patchCV(c=>{c.website=v;})}  style={{display:"inline"}}/></span>
+        </div>
+      </div>
+      {s.showSkills&&<div><SHd t={sectionTitle("skills","Skills")} onChange={v=>setSectionTitle("skills",v)} col={sbText} div={sbDiv} sm/>
+        <Skills skills={cv.skills} onChange={v=>patchCV(c=>{c.skills=v;})} col={sbText} ac={sbIsDark?"rgba(255,255,255,0.55)":accent}/>
+      </div>}
+      {s.showEducation&&<div><SHd t={sectionTitle("education","Education")} onChange={v=>setSectionTitle("education",v)} col={sbText} div={sbDiv} sm/>
+        {cv.education.map((ed,i)=>(
+          <div key={i} style={{marginBottom:8}}>
+            <EditableText value={ed.degree} onChange={v=>patchCV(c=>{c.education[i].degree=v;})} style={{fontSize:s.fontSize*0.88,fontWeight:f.hw,color:sbText,lineHeight:1.3,display:"block"}}/>
+            <EditableText value={ed.school} onChange={v=>patchCV(c=>{c.education[i].school=v;})} style={{fontSize:s.fontSize*0.82,color:sbSub,display:"block",marginTop:1}}/>
+            <EditableText value={ed.period} onChange={v=>patchCV(c=>{c.education[i].period=v;})} style={{fontSize:s.fontSize*0.8,color:sbSub,display:"block"}}/>
+          </div>
+        ))}
+        <AddBtn label="+ Add education" onClick={()=>patchCV(c=>{c.education.push({degree:"Degree",school:"School",period:"20XX — 20XX",note:"Honours"});})}/>
+      </div>}
+      {s.showLanguages&&<div><SHd t={sectionTitle("languages","Languages")} onChange={v=>setSectionTitle("languages",v)} col={sbText} div={sbDiv} sm/>
+        <EditableList items={cv.languages} onChange={v=>patchCV(c=>{c.languages=v;})} itemStyle={{fontSize:s.fontSize*0.86,color:sbSub,display:"block",marginBottom:2}}/>
+      </div>}
+      {s.showAwards&&<div><SHd t={sectionTitle("awards","Awards")} onChange={v=>setSectionTitle("awards",v)} col={sbText} div={sbDiv} sm/>
+        <EditableList items={cv.awards} onChange={v=>patchCV(c=>{c.awards=v;})} itemStyle={{fontSize:s.fontSize*0.86,color:sbSub,display:"block",marginBottom:2}}/>
+      </div>}
+    </div>
+  );
+
+  // ── Section renderer ─────────────────────────────────────
+  const renderSection = (sec) => {
+    if(sec==="summary"&&s.showSummary) return (
+      <div key="summary" style={{marginBottom:18*sp}}>
+        <SHd t={sectionTitle("summary","Summary")} onChange={v=>setSectionTitle("summary",v)}/>
+        <EditableText value={cv.summary} onChange={v=>patchCV(c=>{c.summary=v;})} multiline
+          style={{color:textCol,lineHeight:1.68,fontSize:s.fontSize*0.94,display:"block",width:"100%"}}/>
+      </div>
+    );
+
+    if(sec==="experience"&&s.showExperience) return (
+      <div key="experience" style={{marginBottom:18*sp}}>
+        <SHd t={sectionTitle("experience","Experience")} onChange={v=>setSectionTitle("experience",v)}/>
+        {cv.experience.map((e,i)=>(
+          <div key={i} style={{position:"relative"}}
+            onMouseEnter={()=>setHovExp(i)} onMouseLeave={()=>setHovExp(null)}>
+            {hovExp===i&&(
+              <HoverToolbar>
+                <IBtn label="↑" onClick={()=>patchCV(c=>{const a=c.experience;if(i>0)[a[i],a[i-1]]=[a[i-1],a[i]];})} disabled={i===0}/>
+                <IBtn label="↓" onClick={()=>patchCV(c=>{const a=c.experience;if(i<a.length-1)[a[i],a[i+1]]=[a[i+1],a[i]];})} disabled={i===cv.experience.length-1}/>
+                <IBtn label="×" onClick={()=>patchCV(c=>{c.experience.splice(i,1);})} danger/>
+              </HoverToolbar>
+            )}
+            <Exp item={e} idx={i}/>
+          </div>
+        ))}
+        <AddBtn label="+ Add experience" onClick={()=>patchCV(c=>{c.experience.push({role:"New Role",company:"Company",period:"20XX — Present",location:"",bullets:["Describe your work here"]});})}/>
+      </div>
+    );
+
+    if(sec==="education"&&s.showEducation&&!isSidebar) return (
+      <div key="education" style={{marginBottom:18*sp}}>
+        <SHd t={sectionTitle("education","Education")} onChange={v=>setSectionTitle("education",v)}/>
+        {cv.education.map((ed,i)=>(
+          <div key={i} style={{position:"relative",marginBottom:10}}
+            onMouseEnter={()=>setHovEdu(i)} onMouseLeave={()=>setHovEdu(null)}>
+            {hovEdu===i&&(
+              <HoverToolbar>
+                <IBtn label="↑" onClick={()=>patchCV(c=>{const a=c.education;if(i>0)[a[i],a[i-1]]=[a[i-1],a[i]];})} disabled={i===0}/>
+                <IBtn label="↓" onClick={()=>patchCV(c=>{const a=c.education;if(i<a.length-1)[a[i],a[i+1]]=[a[i+1],a[i]];})} disabled={i===cv.education.length-1}/>
+                <IBtn label="×" onClick={()=>patchCV(c=>{c.education.splice(i,1);})} danger/>
+              </HoverToolbar>
+            )}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+              <div>
+                <EditableText value={ed.degree} onChange={v=>patchCV(c=>{c.education[i].degree=v;})} style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.fontSize*1.02,color:textCol,display:"block"}}/>
+                <div style={{color:accent,fontSize:s.fontSize*0.88,marginTop:1}}>
+                  <EditableText value={ed.school} onChange={v=>patchCV(c=>{c.education[i].school=v;})} style={{display:"inline"}}/>
+                  {" · "}
+                  <EditableText value={ed.note} onChange={v=>patchCV(c=>{c.education[i].note=v;})} style={{display:"inline"}}/>
+                </div>
+              </div>
+              <EditableText value={ed.period} onChange={v=>patchCV(c=>{c.education[i].period=v;})} style={{color:subCol,fontSize:s.fontSize*0.82,flexShrink:0}}/>
+            </div>
+          </div>
+        ))}
+        <AddBtn label="+ Add education" onClick={()=>patchCV(c=>{c.education.push({degree:"Degree",school:"School",period:"20XX — 20XX",note:"Honours"});})}/>
+      </div>
+    );
+
+    if(sec==="skills"&&s.showSkills&&!isSidebar) return (
+      <div key="skills" style={{marginBottom:18*sp}}>
+        <SHd t={sectionTitle("skills","Skills")} onChange={v=>setSectionTitle("skills",v)}/>
+        <Skills skills={cv.skills} onChange={v=>patchCV(c=>{c.skills=v;})}/>
+      </div>
+    );
+
+    if(sec==="languages"&&s.showLanguages&&!isSidebar) return (
+      <div key="languages" style={{marginBottom:18*sp}}>
+        <SHd t={sectionTitle("languages","Languages")} onChange={v=>setSectionTitle("languages",v)}/>
+        <EditableList items={cv.languages} onChange={v=>patchCV(c=>{c.languages=v;})} itemStyle={{color:textCol,fontSize:s.fontSize*0.92,lineHeight:1.7}}/>
+      </div>
+    );
+
+    if(sec==="awards"&&s.showAwards&&!isSidebar) return (
+      <div key="awards" style={{marginBottom:18*sp}}>
+        <SHd t={sectionTitle("awards","Awards")} onChange={v=>setSectionTitle("awards",v)}/>
+        <EditableList items={cv.awards} onChange={v=>patchCV(c=>{c.awards=v;})} itemStyle={{color:textCol,fontSize:s.fontSize*0.92,marginBottom:2}}/>
+      </div>
+    );
+
+    // Custom sections
+    if(sec.startsWith("custom_")) {
+      const cs = (cv.customSections||[]).find(x=>x.id===sec);
+      if(!cs) return null;
+      const csIdx = (cv.customSections||[]).indexOf(cs);
+      return (
+        <div key={sec} style={{marginBottom:18*sp,position:"relative"}}
+          onMouseEnter={()=>setHovCs(sec)} onMouseLeave={()=>setHovCs(null)}>
+          {hovCs===sec&&(
+            <HoverToolbar>
+              <IBtn label="×" onClick={()=>patchCV(c=>{c.customSections.splice(csIdx,1);})} danger/>
+            </HoverToolbar>
+          )}
+          <SHd t={cs.title} onChange={v=>patchCV(c=>{c.customSections[csIdx].title=v;})}/>
+          <EditableList items={cs.items} onChange={v=>patchCV(c=>{c.customSections[csIdx].items=v;})}
+            bullet={bullet||undefined} accentColor={accent}
+            itemStyle={{fontSize:s.fontSize*0.92,color:textCol,lineHeight:1.55}}/>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const mainContent = s.sectionOrder.map(renderSection);
+
+  // ── Contact line ────────────────────────────────────────
+  const icon = (ch) => IC ? <span style={{color:accent,marginRight:3,fontSize:"0.9em"}}>{ch}</span> : null;
+
+  const contactLine = (col, justify="flex-start") => (
+    <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:"3px 14px",color:col,fontSize:s.fontSize*0.86,justifyContent:justify}}>
+      <span>{icon("✉")}<a href={`mailto:${cv.email}`} style={{color:col,textDecoration:"none"}} onMouseEnter={e=>e.target.style.textDecoration="underline"} onMouseLeave={e=>e.target.style.textDecoration="none"}>{cv.email}</a></span>
+      <span>{icon("✆")}{cv.phone}</span>
+      <span>{icon("◎")}{cv.location}</span>
+      <span>{icon("⊕")}<a href={`https://${cv.website.replace(/^https?:\/\//,"")}`} target="_blank" rel="noreferrer" style={{color:col,textDecoration:"none"}} onMouseEnter={e=>e.target.style.textDecoration="underline"} onMouseLeave={e=>e.target.style.textDecoration="none"}>{cv.website}</a></span>
+    </div>
+  );
+
+  const renderHeader = () => {
+    const pad = `${22*sp}px ${isSidebar?22:30}px ${12*sp}px`;
+    if(s.headerStyle==="banner") return (
+      <div style={{background:accentBase,padding:pad,textAlign:s.headerAlign}}>
+        <div style={{display:"flex",flexDirection:s.headerAlign==="center"?"column":"row",alignItems:s.headerAlign==="center"?"center":"flex-start",gap:14}}>
+          {s.showPhoto&&<PhotoUpload size={72} shape={s.photoShape} photoUrl={cv.photoUrl} onUpload={url=>patchCV(c=>{c.photoUrl=url;})} dark={true} ac={accent}/>}
+          <div style={{flex:1}}>
+            <EditableText value={cv.name}  onChange={v=>patchCV(c=>{c.name=v;})}  style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.nameSize,color:"#fff",letterSpacing:f.ls,lineHeight:1.1,display:"block"}}/>
+            <EditableText value={cv.title} onChange={v=>patchCV(c=>{c.title=v;})} style={{color:"rgba(255,255,255,0.8)",fontSize:s.fontSize*1.06,marginTop:4,fontWeight:500,display:"block"}}/>
+            {!isSidebar&&contactLine("rgba(255,255,255,0.65)",s.headerAlign==="center"?"center":"flex-start")}
+          </div>
+        </div>
+      </div>
+    );
+    if(s.headerStyle==="accent-bar") return (
+      <div>
+        <div style={{height:5,background:accent}}/>
+        <div style={{padding:pad,borderBottom:`1px solid ${accent}22`,textAlign:s.headerAlign,display:"flex",flexDirection:s.headerAlign==="center"?"column":"row",alignItems:s.headerAlign==="center"?"center":"flex-start",gap:14}}>
+          {s.showPhoto&&<PhotoUpload size={70} shape={s.photoShape} photoUrl={cv.photoUrl} onUpload={url=>patchCV(c=>{c.photoUrl=url;})} dark={false} ac={accent}/>}
+          <div style={{flex:1}}>
+            <EditableText value={cv.name}  onChange={v=>patchCV(c=>{c.name=v;})}  style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.nameSize,color:textCol,letterSpacing:f.ls,lineHeight:1.1,display:"block"}}/>
+            <EditableText value={cv.title} onChange={v=>patchCV(c=>{c.title=v;})} style={{color:accent,fontSize:s.fontSize*1.06,marginTop:3,fontWeight:500,display:"block"}}/>
+            {!isSidebar&&contactLine(subCol,s.headerAlign==="center"?"center":"flex-start")}
+          </div>
+        </div>
+      </div>
+    );
+    return (
+      <div style={{padding:pad,borderBottom:`1px solid ${accent}22`,display:"flex",flexDirection:s.headerAlign==="center"?"column":"row",alignItems:s.headerAlign==="center"?"center":"flex-start",gap:14,textAlign:s.headerAlign}}>
+        {s.showPhoto&&<PhotoUpload size={72} shape={s.photoShape} photoUrl={cv.photoUrl} onUpload={url=>patchCV(c=>{c.photoUrl=url;})} dark={false} ac={accent}/>}
+        <div style={{flex:1}}>
+          <EditableText value={cv.name}  onChange={v=>patchCV(c=>{c.name=v;})}  style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.nameSize,color:textCol,letterSpacing:f.ls,lineHeight:1.1,display:"block"}}/>
+          <EditableText value={cv.title} onChange={v=>patchCV(c=>{c.title=v;})} style={{color:accent,fontSize:s.fontSize*1.06,marginTop:4,fontWeight:500,display:"block"}}/>
+          {!isSidebar&&contactLine(subCol,s.headerAlign==="center"?"center":"flex-start")}
+        </div>
+      </div>
+    );
+  };
+
+  // ── Layouts ──────────────────────────────────────────────
+  if(s.layout==="classic") return (
+    <div style={paper}>
+      {renderHeader()}
+      <div style={{padding:`${18*sp}px ${30*sp}px`}}>{mainContent}</div>
+    </div>
+  );
+
+  if(s.layout==="minimal") return (
+    <div style={paper}>
+      <div style={{padding:`${28*sp}px ${50*sp}px ${16*sp}px`,textAlign:"center",borderBottom:`2px solid ${accent}`}}>
+        {s.showPhoto&&<div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
+          <PhotoUpload size={72} shape={s.photoShape} photoUrl={cv.photoUrl} onUpload={url=>patchCV(c=>{c.photoUrl=url;})} dark={false} ac={accent}/>
+        </div>}
+        <EditableText value={cv.name}  onChange={v=>patchCV(c=>{c.name=v;})}  style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.nameSize,color:textCol,letterSpacing:"0.05em",display:"block"}}/>
+        <EditableText value={cv.title} onChange={v=>patchCV(c=>{c.title=v;})} style={{color:accent,fontSize:s.fontSize*1.06,marginTop:4,fontWeight:500,display:"block"}}/>
+        {contactLine(subCol,"center")}
+      </div>
+      <div style={{padding:`${18*sp}px ${50*sp}px`}}>{mainContent}</div>
+    </div>
+  );
+
+  const usesFullHeader = s.headerStyle==="banner"||s.headerStyle==="accent-bar";
+  const sbW = s.sidebarWidth;
+  const sidebarEl = <div style={{width:`${sbW}%`,background:sbBg,flexShrink:0,minHeight:"100%"}}><Sidebar/></div>;
+  const mainColEl = (
+    <div style={{flex:1,minWidth:0}}>
+      {!usesFullHeader&&(
+        <div style={{padding:`${18*sp}px ${22*sp}px ${10*sp}px`,borderBottom:`1px solid ${accent}18`}}>
+          <EditableText value={cv.name}  onChange={v=>patchCV(c=>{c.name=v;})}  style={{fontFamily:f.h,fontWeight:f.hw,fontSize:s.nameSize,color:textCol,letterSpacing:f.ls,lineHeight:1.1,display:"block"}}/>
+          <EditableText value={cv.title} onChange={v=>patchCV(c=>{c.title=v;})} style={{color:accent,fontSize:s.fontSize*1.05,marginTop:4,fontWeight:500,display:"block"}}/>
+        </div>
+      )}
+      <div style={{padding:`${16*sp}px ${22*sp}px`}}>{mainContent}</div>
+    </div>
+  );
+
+  return (
+    <div style={{...paper,display:"flex",flexDirection:"column"}}>
+      {usesFullHeader&&renderHeader()}
+      <div style={{display:"flex",flex:1,minHeight:0}}>
+        {isSL?<>{sidebarEl}{mainColEl}</>:<>{mainColEl}{sidebarEl}</>}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window,{CVPreview});
+</script>
+
+<!-- ── App shell ── -->
+<script type="text/babel">
+const { useReducer, useEffect, useCallback, useState } = React;
+
+// ── Layout SVG thumbnails ──────────────────────────────────
+function LayoutThumb({kind,active}) {
+  const st=active?"#3B5BDB":"#d0d0d0", fi=active?"#e8ecfd":"#f5f5f5",
+        ba=active?"#3B5BDB":"#c8c8c8", li=active?"#b0bcec":"#e0e0e0", l2=active?"#cdd6f5":"#ebebeb";
+  if(kind==="classic") return(
+    <svg width="46" height="58" viewBox="0 0 46 58" fill="none">
+      <rect x="1" y="1" width="44" height="56" rx="3" fill={fi} stroke={st} strokeWidth="1.5"/>
+      <rect x="6" y="7" width="34" height="5" rx="1.5" fill={ba}/>
+      <rect x="6" y="15" width="20" height="2.5" rx="1" fill={li}/>
+      <rect x="6" y="22" width="14" height="2" rx="1" fill={l2}/>
+      <rect x="6" y="26" width="34" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="6" y="30" width="34" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="6" y="34" width="24" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="6" y="40" width="14" height="2" rx="1" fill={l2}/>
+      <rect x="6" y="44" width="34" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="6" y="48" width="28" height="1.5" rx=".75" fill="#ececec"/>
+    </svg>);
+  if(kind==="sidebar-left") return(
+    <svg width="46" height="58" viewBox="0 0 46 58" fill="none">
+      <rect x="1" y="1" width="44" height="56" rx="3" fill={fi} stroke={st} strokeWidth="1.5"/>
+      <rect x="1" y="1" width="15" height="56" rx="3" fill={ba}/>
+      <rect x="3" y="9" width="11" height="2.5" rx="1" fill="rgba(255,255,255,0.55)"/>
+      <rect x="3" y="14" width="9" height="1.5" rx=".75" fill="rgba(255,255,255,0.35)"/>
+      <rect x="3" y="18" width="11" height="1.5" rx=".75" fill="rgba(255,255,255,0.35)"/>
+      <rect x="3" y="22" width="8" height="1.5" rx=".75" fill="rgba(255,255,255,0.35)"/>
+      <rect x="19" y="8" width="24" height="4" rx="1.5" fill={li}/>
+      <rect x="19" y="14" width="18" height="2" rx="1" fill={l2}/>
+      <rect x="19" y="20" width="24" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="19" y="24" width="24" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="19" y="28" width="16" height="1.5" rx=".75" fill="#ececec"/>
+    </svg>);
+  if(kind==="sidebar-right") return(
+    <svg width="46" height="58" viewBox="0 0 46 58" fill="none">
+      <rect x="1" y="1" width="44" height="56" rx="3" fill={fi} stroke={st} strokeWidth="1.5"/>
+      <rect x="30" y="1" width="15" height="56" rx="3" fill={ba}/>
+      <rect x="32" y="9" width="11" height="2.5" rx="1" fill="rgba(255,255,255,0.55)"/>
+      <rect x="32" y="14" width="9" height="1.5" rx=".75" fill="rgba(255,255,255,0.35)"/>
+      <rect x="32" y="18" width="11" height="1.5" rx=".75" fill="rgba(255,255,255,0.35)"/>
+      <rect x="4" y="8" width="24" height="4" rx="1.5" fill={li}/>
+      <rect x="4" y="14" width="18" height="2" rx="1" fill={l2}/>
+      <rect x="4" y="20" width="24" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="4" y="24" width="24" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="4" y="28" width="16" height="1.5" rx=".75" fill="#ececec"/>
+    </svg>);
+  return(
+    <svg width="46" height="58" viewBox="0 0 46 58" fill="none">
+      <rect x="1" y="1" width="44" height="56" rx="3" fill={fi} stroke={st} strokeWidth="1.5"/>
+      <rect x="8" y="7" width="30" height="5" rx="1.5" fill={ba}/>
+      <rect x="12" y="14" width="22" height="2.5" rx="1" fill={li}/>
+      <rect x="1" y="20" width="44" height="1.5" rx=".75" fill={ba} opacity=".4"/>
+      <rect x="6" y="26" width="34" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="6" y="30" width="34" height="1.5" rx=".75" fill="#ececec"/>
+      <rect x="6" y="34" width="22" height="1.5" rx=".75" fill="#ececec"/>
+    </svg>);
+}
+
+// ── Tweaks Panel ───────────────────────────────────────────
+function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText}) {
+  const importRef = React.useRef(null);
+  const set = (key,val) => dispatch({type:"SET_S", patch:{[key]:val}});
+  const setS = (patch)  => dispatch({type:"SET_S", patch});
+  const sc   = SCHEMES[s.scheme];
+  const accent = s.customAccent || sc.accent;
+
+  const moveSection = (sec, dir) => {
+    const order = [...s.sectionOrder];
+    const i = order.indexOf(sec);
+    if(i+dir<0||i+dir>=order.length) return;
+    [order[i],order[i+dir]] = [order[i+dir],order[i]];
+    dispatch({type:"SET_S", patch:{sectionOrder:order}});
+  };
+
+  const SECTION_LABELS = {summary:"Summary",experience:"Experience",education:"Education",skills:"Skills",languages:"Languages",awards:"Awards"};
+  const SHOW_KEYS = {summary:"showSummary",experience:"showExperience",education:"showEducation",skills:"showSkills",languages:"showLanguages",awards:"showAwards"};
+
+  const PRESETS = [
+    {label:"Corporate",  desc:"Clean, professional, ATS-safe",            v:{layout:"classic",      scheme:"slate",  font:"modern",    density:"normal",  divider:"line",  skillsDisplay:"tags",  sidebarBg:"accent",headerStyle:"standard",paperTone:"white"}},
+    {label:"Creative",   desc:"Bold sidebar, editorial type",              v:{layout:"sidebar-left", scheme:"plum",   font:"editorial", density:"spacious",divider:"thick", skillsDisplay:"tags",  sidebarBg:"accent",headerStyle:"standard",paperTone:"white"}},
+    {label:"Minimal",    desc:"Lots of space, centred header",             v:{layout:"minimal",      scheme:"noir",   font:"geometric", density:"spacious",divider:"none",  skillsDisplay:"inline",sidebarBg:"accent",headerStyle:"standard",paperTone:"white"}},
+    {label:"Academic",   desc:"Dense serif, double rule dividers",         v:{layout:"classic",      scheme:"forest", font:"classic",   density:"compact", divider:"double",skillsDisplay:"list",  sidebarBg:"accent",headerStyle:"standard",paperTone:"ivory"}},
+    {label:"Executive",  desc:"Right sidebar, refined Cormorant",          v:{layout:"sidebar-right",scheme:"copper", font:"refined",   density:"normal",  divider:"thick", skillsDisplay:"inline",sidebarBg:"dark",  headerStyle:"accent-bar",paperTone:"white"}},
+    {label:"Warm",       desc:"Humanist serif, light sidebar",             v:{layout:"sidebar-left", scheme:"ember",  font:"humanist",  density:"normal",  divider:"dots",  skillsDisplay:"tags",  sidebarBg:"light", headerStyle:"standard",paperTone:"warm"}},
+    {label:"Dark Mode",  desc:"Charcoal paper, bright accent",             v:{layout:"sidebar-left", scheme:"teal",   font:"modern",    density:"normal",  divider:"line",  skillsDisplay:"tags",  sidebarBg:"dark",  headerStyle:"standard",paperTone:"dark"}},
+    {label:"Banner",     desc:"Full-width colour header",                  v:{layout:"classic",      scheme:"slate",  font:"editorial", density:"normal",  divider:"line",  skillsDisplay:"tags",  sidebarBg:"accent",headerStyle:"banner",  paperTone:"white"}},
+    {label:"Rose",       desc:"Warm rose accent, cool ivory paper",        v:{layout:"sidebar-right",scheme:"rose",   font:"humanist",  density:"normal",  divider:"thick", skillsDisplay:"tags",  sidebarBg:"accent",headerStyle:"standard",paperTone:"ivory"}},
+    {label:"Charcoal",   desc:"Dark paper, Montserrat, bar header",        v:{layout:"classic",      scheme:"noir",   font:"geometric", density:"compact", divider:"thick", skillsDisplay:"bars",  sidebarBg:"dark",  headerStyle:"accent-bar",paperTone:"charcoal"}},
+  ];
+
+  const iBtn = (label,onClick,disabled,title) => (
+    <button onClick={onClick} disabled={disabled} title={title} style={{
+      border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",
+      background:disabled?"#fafafa":"#fff",color:disabled?"#ccc":"#444",
+      fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:disabled?"default":"pointer",
+      transition:"all 0.1s",lineHeight:1.4,
+    }}>{label}</button>
+  );
+
+  return (
+    <div id="panel" style={{width:295,flexShrink:0,background:"#f9f9f9",borderLeft:"1px solid #e5e5e5",
+      overflowY:"auto",display:"flex",flexDirection:"column"}}>
+
+      {/* Header */}
+      <div style={{padding:"13px 16px 11px",borderBottom:"1px solid #ebebeb",position:"sticky",top:0,background:"#f9f9f9",zIndex:10}}>
+        <div style={{fontSize:12.5,fontWeight:700,color:"#111",letterSpacing:"-0.01em",marginBottom:6}}>Construction Kit</div>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+          {iBtn("↩ Undo",()=>dispatch({type:"UNDO"}),!canUndo,"Undo (⌘Z)")}
+          {iBtn("↪ Redo",()=>dispatch({type:"REDO"}),!canRedo,"Redo (⌘⇧Z)")}
+          <button onClick={()=>{ if(window.confirm("Reset all CV content to the sample data?")) dispatch({type:"RESET_CV"}); }}
+            style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#888",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>Reset</button>
+          <button onClick={()=>window.print()} style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 9px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",marginLeft:"auto"}}>Print / PDF</button>
+        </div>
+        <div style={{display:"flex",gap:5,marginTop:5}}>
+          <button onClick={onExport} style={{flex:1,border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>⬇ Export .json</button>
+          <button onClick={()=>importRef.current?.click()} style={{flex:1,border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>⬆ Import .json</button>
+          <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={e=>{onImport(e.target.files[0]);e.target.value="";}}/>
+        </div>
+        <div style={{display:"flex",gap:5,marginTop:5}}>
+          <button onClick={onCopyText} style={{flex:1,border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>⎘ Copy as text</button>
+        </div>
+        <div style={{fontSize:9.5,color:"#bbb",marginTop:6}}>Click any CV text to edit it inline</div>
+      </div>
+
+      <div style={{padding:"16px 16px",display:"flex",flexDirection:"column",gap:18}}>
+
+        {/* Layout */}
+        <TSection title="Layout">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+            {["classic","sidebar-left","sidebar-right","minimal"].map(v=>(
+              <div key={v} onClick={()=>set("layout",v)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",padding:"6px 4px",borderRadius:8,background:s.layout===v?"#f0f2fd":"transparent",border:`1px solid ${s.layout===v?"#c8d0f5":"transparent"}`,transition:"all 0.15s"}}>
+                <LayoutThumb kind={v} active={s.layout===v}/>
+                <div style={{fontSize:9.5,color:s.layout===v?"#3B5BDB":"#888",fontWeight:s.layout===v?600:400}}>{{classic:"Classic","sidebar-left":"Sidebar L","sidebar-right":"Sidebar R",minimal:"Minimal"}[v]}</div>
+              </div>
+            ))}
+          </div>
+          {(s.layout==="sidebar-left"||s.layout==="sidebar-right")&&<>
+            <SliderRow label="Sidebar width" val={s.sidebarWidth} commit={v=>set("sidebarWidth",v)} min={20} max={42} unit="%"/>
+            <Row label="Sidebar bg">
+              <Seg xs opts={[{l:"Accent",v:"accent"},{l:"Dark",v:"dark"},{l:"Light",v:"light"},{l:"White",v:"white"}]} val={s.sidebarBg} set={v=>set("sidebarBg",v)}/>
+            </Row>
+          </>}
+          <Row label="Header style">
+            <Seg xs opts={[{l:"Standard",v:"standard"},{l:"Banner",v:"banner"},{l:"Bar",v:"accent-bar"}]} val={s.headerStyle} set={v=>set("headerStyle",v)}/>
+          </Row>
+        </TSection>
+
+        {/* Color */}
+        <TSection title="Color Scheme">
+          <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:10}}>
+            {Object.entries(SCHEMES).map(([k,sc2])=>(
+              <div key={k} onClick={()=>{set("scheme",k);set("customAccent",null);}}
+                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
+                <div style={{width:22,height:22,borderRadius:"50%",background:sc2.accent,
+                  outline:s.scheme===k&&!s.customAccent?`2.5px solid ${sc2.accent}`:"2.5px solid transparent",
+                  outlineOffset:2.5,transform:s.scheme===k&&!s.customAccent?"scale(1.15)":"scale(1)",transition:"all 0.14s"}}/>
+                <div style={{fontSize:8.5,color:"#bbb",textTransform:"capitalize"}}>{k}</div>
+              </div>
+            ))}
+          </div>
+          <Row label="Custom accent">
+            <div style={{width:22,height:22,borderRadius:"50%",background:accent,border:"1.5px solid #ddd",overflow:"hidden",position:"relative"}}>
+              <input type="color" value={accent} onChange={e=>set("customAccent",e.target.value)}
+                style={{position:"absolute",inset:"-4px",width:"calc(100% + 8px)",height:"calc(100% + 8px)",opacity:0,cursor:"pointer"}}/>
+            </div>
+            {s.customAccent&&<button onClick={()=>set("customAccent",null)} style={{border:"none",background:"none",fontSize:10,color:"#aaa",fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>reset</button>}
+          </Row>
+          <Row label="Paper tone">
+            <div style={{display:"flex",gap:5}}>
+              {Object.entries(PAPER_TONES).map(([k,pt])=>(
+                <div key={k} onClick={()=>set("paperTone",k)} title={k}
+                  style={{width:18,height:18,borderRadius:"50%",cursor:"pointer",
+                    background:pt.bg,
+                    border:s.paperTone===k?"2px solid #555":"1.5px solid #ccc",
+                    boxShadow:pt.dark?"inset 0 0 0 1px rgba(255,255,255,0.15)":"none",
+                    transition:"all 0.12s",transform:s.paperTone===k?"scale(1.2)":"scale(1)"}}/>
+              ))}
+            </div>
+          </Row>
+        </TSection>
+
+        {/* Typography */}
+        <TSection title="Typography">
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,color:"#bbb",marginBottom:7}}>Font pairing</div>
+            <div style={{display:"flex",flexDirection:"column",gap:3}}>
+              {[["modern","DM Sans · clean, modern"],["editorial","Playfair · editorial"],["classic","EB Garamond · timeless"],["geometric","Montserrat · bold geo"],["refined","Cormorant · refined serif"],["humanist","Lora · warm humanist"]].map(([k,label])=>(
+                <div key={k} onClick={()=>set("font",k)} style={{padding:"5px 9px",borderRadius:6,cursor:"pointer",fontSize:11,background:s.font===k?"#f0f2fd":"transparent",border:`1px solid ${s.font===k?"#c5cef5":"transparent"}`,color:s.font===k?"#3B5BDB":"#555",fontWeight:s.font===k?500:400,transition:"all 0.12s"}}>{label}</div>
+              ))}
+            </div>
+          </div>
+          <SliderRow label="Body size" val={s.fontSize} commit={v=>set("fontSize",v)} min={10} max={16} step={0.5} unit="px"/>
+          <SliderRow label="Name size"  val={s.nameSize}  commit={v=>set("nameSize",v)}  min={18} max={52} unit="px"/>
+          <Row label="Caps headings"><Toggle val={s.sectionCaps} set={v=>set("sectionCaps",v)}/></Row>
+        </TSection>
+
+        {/* Header */}
+        <TSection title="Header">
+          <Row label="Alignment">
+            <Seg opts={[{l:"Left",v:"left"},{l:"Center",v:"center"}]} val={s.headerAlign} set={v=>set("headerAlign",v)}/>
+          </Row>
+          <Row label="Photo placeholder"><Toggle val={s.showPhoto} set={v=>set("showPhoto",v)}/></Row>
+          {s.showPhoto&&<Row label="Photo shape">
+            <Seg xs opts={[{l:"Circle",v:"circle"},{l:"Square",v:"square"},{l:"Rounded",v:"rounded"}]} val={s.photoShape} set={v=>set("photoShape",v)}/>
+          </Row>}
+          <Row label="Contact icons"><Toggle val={s.showIcons} set={v=>set("showIcons",v)}/></Row>
+        </TSection>
+
+        {/* Sections with reorder */}
+        <TSection title="Sections & Order">
+          <div style={{fontSize:9.5,color:"#ccc",marginBottom:8}}>Use ↑ ↓ to reorder · toggle to show/hide</div>
+          {s.sectionOrder.map((sec,i)=>{
+            const isCustom = sec.startsWith("custom_");
+            const customTitle = isCustom ? (cv.customSections||[]).find(x=>x.id===sec)?.title || "Custom" : null;
+            const label = isCustom ? customTitle : SECTION_LABELS[sec];
+            const showKey = !isCustom ? SHOW_KEYS[sec] : null;
+            return (
+              <div key={sec} style={{display:"flex",alignItems:"center",gap:5,marginBottom:6,padding:"4px 6px",borderRadius:6,background:"#fff",border:"1px solid #ebebeb"}}>
+                <div style={{flex:1,fontSize:11,color:"#333",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</div>
+                {showKey
+                  ? <Toggle val={s[showKey]} set={v=>set(showKey,v)}/>
+                  : <div style={{width:30}}/>}
+                <button onClick={()=>moveSection(sec,-1)} disabled={i===0}
+                  style={{border:"none",background:"none",cursor:i===0?"default":"pointer",color:i===0?"#ddd":"#888",fontSize:12,padding:"0 2px",lineHeight:1}}>↑</button>
+                <button onClick={()=>moveSection(sec,+1)} disabled={i===s.sectionOrder.length-1}
+                  style={{border:"none",background:"none",cursor:i===s.sectionOrder.length-1?"default":"pointer",color:i===s.sectionOrder.length-1?"#ddd":"#888",fontSize:12,padding:"0 2px",lineHeight:1}}>↓</button>
+                {isCustom&&<button onClick={()=>{
+                  dispatch({type:"SET_S",patch:{sectionOrder:s.sectionOrder.filter(x=>x!==sec)}});
+                  dispatch({type:"PATCH_CV",fn:c=>{c.customSections=(c.customSections||[]).filter(x=>x.id!==sec);}});
+                }} style={{border:"none",background:"none",cursor:"pointer",color:"#e53e3e",fontSize:13,padding:"0 1px",lineHeight:1}}>×</button>}
+              </div>
+            );
+          })}
+          <button onClick={()=>{
+            const id = "custom_"+Date.now();
+            dispatch({type:"PATCH_CV", fn:c=>{
+              if(!c.customSections) c.customSections=[];
+              c.customSections.push({id, title:"New Section", items:["Add your content here"]});
+            }});
+            dispatch({type:"SET_S", patch:{sectionOrder:[...s.sectionOrder, id]}});
+          }} style={{display:"block",width:"100%",textAlign:"left",border:"1px dashed #d0d0d0",borderRadius:6,padding:"6px 10px",background:"transparent",cursor:"pointer",color:"#aaa",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",marginTop:4,transition:"all 0.15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#999";e.currentTarget.style.color="#666";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#d0d0d0";e.currentTarget.style.color="#aaa";}}>
+            + New section
+          </button>
+        </TSection>
+
+        {/* Style Details */}
+        <TSection title="Style Details">
+          <Row label="Spacing">
+            <Seg xs opts={[{l:"Tight",v:"compact"},{l:"Normal",v:"normal"},{l:"Airy",v:"spacious"}]} val={s.density} set={v=>set("density",v)}/>
+          </Row>
+          <Row label="Dividers">
+            <Seg xs opts={[{l:"Line",v:"line"},{l:"Thick",v:"thick"},{l:"×2",v:"double"},{l:"Dots",v:"dots"},{l:"Off",v:"none"}]} val={s.divider} set={v=>set("divider",v)}/>
+          </Row>
+          <Row label="Skills display">
+            <Seg xs opts={[{l:"Tags",v:"tags"},{l:"Grid",v:"grid"},{l:"Bars",v:"bars"},{l:"Inline",v:"inline"},{l:"List",v:"list"}]} val={s.skillsDisplay} set={v=>set("skillsDisplay",v)}/>
+          </Row>
+          <Row label="Bullets">
+            <Seg xs opts={[{l:"–",v:"dash"},{l:"•",v:"dot"},{l:"→",v:"arrow"},{l:"off",v:"none"}]} val={s.bulletStyle} set={v=>set("bulletStyle",v)}/>
+          </Row>
+          <Row label="Date position">
+            <Seg xs opts={[{l:"Right",v:"right"},{l:"Below",v:"below"}]} val={s.datePos} set={v=>set("datePos",v)}/>
+          </Row>
+          <Row label="Job separators"><Toggle val={s.jobSeparator} set={v=>set("jobSeparator",v)}/></Row>
+          <Row label="Verbose bullets" sub={s.verboseMode?"Show all":"Show 2 per job"}>
+            <Toggle val={s.verboseMode} set={v=>set("verboseMode",v)}/>
+          </Row>
+          <Row label="Paper shadow">
+            <Seg xs opts={[{l:"Off",v:"none"},{l:"Soft",v:"soft"},{l:"Mid",v:"medium"},{l:"Deep",v:"dramatic"}]} val={s.shadow} set={v=>set("shadow",v)}/>
+          </Row>
+          <SliderRow label="Preview zoom" val={s.zoom} commit={v=>set("zoom",v)} min={50} max={150} step={5} unit="%"/>
+        </TSection>
+
+        {/* Presets */}
+        <TSection title="Quick Presets">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+            {PRESETS.map(p=>(
+              <button key={p.label} onClick={()=>dispatch({type:"SET_S",patch:p.v})} title={p.desc}
+                style={{border:"1px solid #e2e2e2",borderRadius:7,padding:"6px 10px",background:"#fff",
+                  fontSize:10.5,color:"#444",fontFamily:"'DM Sans',sans-serif",textAlign:"left",
+                  transition:"all 0.12s",lineHeight:1.2,cursor:"pointer"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="#aaa";e.currentTarget.style.background="#fafafa";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e2e2";e.currentTarget.style.background="#fff";}}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </TSection>
+
+        <div style={{height:8}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── Reducer ────────────────────────────────────────────────
+function reducer(state, action) {
+  const {history, idx} = state;
+  const cur = history[idx];
+  switch(action.type) {
+    case "SET_S": {
+      const ns = {...cur.s, ...action.patch};
+      const nh = [...history.slice(0, idx+1), {s:ns, cv:cur.cv}].slice(-40);
+      return {history:nh, idx:nh.length-1};
+    }
+    case "PATCH_CV": {
+      const ncv = JSON.parse(JSON.stringify(cur.cv));
+      action.fn(ncv);
+      const nh = [...history.slice(0, idx+1), {s:cur.s, cv:ncv}].slice(-40);
+      return {history:nh, idx:nh.length-1};
+    }
+    case "RESET_CV": {
+      const nh = [...history.slice(0, idx+1), {s:cur.s, cv:JSON.parse(JSON.stringify(INITIAL_CV))}].slice(-40);
+      return {history:nh, idx:nh.length-1};
+    }
+    case "LOAD": {
+      const nh = [...history.slice(0, idx+1), action.snap].slice(-40);
+      return {history:nh, idx:nh.length-1};
+    }
+    case "UNDO": return idx>0 ? {...state, idx:idx-1} : state;
+    case "REDO": return idx<history.length-1 ? {...state, idx:idx+1} : state;
+    default: return state;
+  }
+}
+
+// ── App ────────────────────────────────────────────────────
+function App() {
+  const loadInitial = () => {
+    try {
+      const raw = localStorage.getItem("cv-kit-v2");
+      if(raw) {
+        const {s, cv} = JSON.parse(raw);
+        return { history:[{s:{...DEFAULT_SETTINGS,...s}, cv:{...INITIAL_CV,...cv}}], idx:0 };
+      }
+    } catch {}
+    return { history:[{s:DEFAULT_SETTINGS, cv:INITIAL_CV}], idx:0 };
+  };
+
+  const [state, dispatch] = useReducer(reducer, null, loadInitial);
+  const [focusMode, setFocusMode] = useState(false);
+  const cur = state.history[state.idx];
+  const {s, cv} = cur;
+
+  useEffect(()=>{
+    try { localStorage.setItem("cv-kit-v2", JSON.stringify({s,cv})); } catch {}
+  }, [s, cv]);
+
+  useEffect(()=>{
+    const handler = (e) => {
+      if((e.metaKey||e.ctrlKey) && e.key==="z" && !e.shiftKey) {
+        e.preventDefault(); dispatch({type:"UNDO"});
+      }
+      if((e.metaKey||e.ctrlKey) && (e.key==="y"||(e.key==="z"&&e.shiftKey))) {
+        e.preventDefault(); dispatch({type:"REDO"});
+      }
+      const tag = document.activeElement?.tagName;
+      const isEditing = tag==="INPUT"||tag==="TEXTAREA"||document.activeElement?.isContentEditable;
+      if((e.key==="f"||e.key==="F") && !isEditing && !e.metaKey && !e.ctrlKey) {
+        setFocusMode(p=>!p);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return ()=>document.removeEventListener("keydown", handler);
+  }, []);
+
+  const patchCV = useCallback((fn) => dispatch({type:"PATCH_CV", fn}), [dispatch]);
+
+  const copyAsText = useCallback(() => {
+    const c = cur.cv;
+    const lines = [];
+    lines.push(c.name.toUpperCase());
+    lines.push(c.title);
+    lines.push([c.email, c.phone, c.location, c.website].filter(Boolean).join("  ·  "));
+    lines.push("");
+    if(s.showSummary && c.summary) { lines.push("SUMMARY"); lines.push(c.summary); lines.push(""); }
+    if(s.showExperience) {
+      lines.push("EXPERIENCE");
+      c.experience.forEach(e => {
+        lines.push(`${e.role} — ${e.company}  (${e.period})`);
+        e.bullets.forEach(b => lines.push(`  – ${b}`));
+        lines.push("");
+      });
+    }
+    if(s.showEducation) {
+      lines.push("EDUCATION");
+      c.education.forEach(e => { lines.push(`${e.degree}, ${e.school}  (${e.period})`); });
+      lines.push("");
+    }
+    if(s.showSkills && c.skills.length) { lines.push("SKILLS"); lines.push(c.skills.join(", ")); lines.push(""); }
+    if(s.showLanguages && c.languages.length) { lines.push("LANGUAGES"); lines.push(c.languages.join(", ")); lines.push(""); }
+    if(s.showAwards && c.awards.length) { lines.push("AWARDS"); c.awards.forEach(a=>lines.push(a)); }
+    navigator.clipboard.writeText(lines.join("\n")).then(()=>alert("CV copied to clipboard!"));
+  }, [cur, s]);
+
+  const appBg = (SCHEMES[s.scheme]||SCHEMES.slate).app;
+
+  const exportJSON = useCallback(() => {
+    const blob = new Blob([JSON.stringify({s, cv}, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (cv.name||"cv").replace(/\s+/g,"-").toLowerCase()+"-cv.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [s, cv]);
+
+  const importJSON = useCallback((file) => {
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const snap = {
+          s: data.s ? {...DEFAULT_SETTINGS, ...data.s} : s,
+          cv: data.cv ? {...INITIAL_CV, ...data.cv} : cv,
+        };
+        dispatch({type:"LOAD", snap});
+      } catch { alert("Invalid JSON file."); }
+    };
+    reader.readAsText(file);
+  }, [s, cv]);
+
+  return (
+    <div id="app-shell" style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"'DM Sans',sans-serif"}}>
+      <div id="preview-wrap" style={{flex:1,overflowY:"auto",background:appBg,transition:"background 0.35s",padding:"32px 28px",display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
+        <div style={{zoom:s.zoom/100,width:"100%",maxWidth:800}}>
+          <CVPreview s={s} cv={cv} patchCV={patchCV}/>
+        </div>
+        <div style={{height:48}}/>
+        <button onClick={()=>setFocusMode(p=>!p)} title="Focus mode (F)" style={{position:"fixed",bottom:18,right:focusMode?18:310,padding:"5px 12px",borderRadius:99,background:"rgba(0,0,0,0.55)",color:"#fff",border:"none",cursor:"pointer",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",zIndex:100,transition:"right 0.3s",backdropFilter:"blur(4px)"}}>
+          {focusMode?"Show Panel":"Focus (F)"}
+        </button>
+      </div>
+      <div style={{width:focusMode?0:295,overflow:"hidden",transition:"width 0.3s ease",flexShrink:0}}>
+        <div style={{width:295}}>
+          <TweaksPanel s={s} cv={cv} dispatch={dispatch} canUndo={state.idx>0} canRedo={state.idx<state.history.length-1} onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
