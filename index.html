@@ -1,8 +1,650 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=CV Construction Kit v2.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Construction Kit — Build a beautiful CV in minutes</title>
+<meta name="description" content="A free, powerful CV builder with real-time visual controls. No sign-up. No watermark. Yours in minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #3B5BDB;
+    --accent-light: #e8ecfd;
+    --accent-dark: #2f4bbf;
+    --text: #111827;
+    --sub: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    background: #fff;
+    line-height: 1.6;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-weight: 700; font-size: 15px; color: var(--text);
+    text-decoration: none; letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .nav-cta {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 8px 18px; font-size: 13.5px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+    display: inline-block;
+  }
+  .nav-cta:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 96px 32px 80px;
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-light); color: var(--accent);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; padding: 5px 12px; border-radius: 99px;
+    margin-bottom: 28px;
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
+  h1 {
+    font-size: clamp(36px, 6vw, 60px);
+    font-weight: 700; letter-spacing: -0.03em;
+    line-height: 1.1; color: var(--text);
+    margin-bottom: 20px;
+  }
+  h1 em {
+    font-style: normal; color: var(--accent);
+  }
+  .hero-sub {
+    font-size: 18px; color: var(--sub);
+    max-width: 520px; margin: 0 auto 36px;
+    line-height: 1.65;
+  }
+  .hero-actions {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    padding: 14px 28px; font-size: 15px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 14px rgba(59,91,219,0.35);
+  }
+  .btn-primary:hover {
+    background: var(--accent-dark); transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59,91,219,0.4);
+  }
+  .btn-secondary {
+    background: #fff; color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 14px 28px; font-size: 15px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; text-decoration: none;
+    transition: border-color 0.15s, transform 0.1s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-secondary:hover { border-color: #aaa; transform: translateY(-2px); }
+  .hero-note {
+    margin-top: 16px; font-size: 12.5px; color: #9ca3af;
+  }
+
+  /* ── App preview mockup ── */
+  .preview-wrap {
+    max-width: 1000px; margin: 0 auto 80px;
+    padding: 0 32px;
+  }
+  .preview-frame {
+    background: #e4e6f0;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .preview-bar {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+  }
+  .preview-bar-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .preview-inner {
+    display: flex; gap: 12px; height: 380px;
+  }
+  /* CV paper mockup */
+  .preview-cv {
+    flex: 1; background: #fff; border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column;
+  }
+  .preview-cv-sidebar {
+    width: 32%; background: var(--accent);
+    min-height: 100%;
+    padding: 20px 14px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .preview-cv-main {
+    flex: 1; padding: 20px 18px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .mock-line { height: 8px; border-radius: 4px; background: currentColor; opacity: 0.12; }
+  .mock-line.dark { opacity: 0.9; }
+  .mock-line.med  { opacity: 0.5; }
+  .mock-line.light{ opacity: 0.2; }
+  .mock-block { display: flex; flex-direction: column; gap: 5px; }
+  .mock-tag {
+    display: inline-block; height: 18px; border-radius: 99px;
+    background: rgba(255,255,255,0.25);
+  }
+  .mock-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  /* Panel mockup */
+  .preview-panel {
+    width: 200px; flex-shrink: 0;
+    background: #f9f9f9; border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow: hidden;
+  }
+  .panel-section { display: flex; flex-direction: column; gap: 5px; }
+  .panel-label { height: 6px; width: 40%; border-radius: 3px; background: #d1d5db; }
+  .panel-row { display: flex; gap: 4px; }
+  .panel-chip {
+    height: 20px; border-radius: 5px; background: #e5e7eb;
+    flex: 1;
+  }
+  .panel-chip.active { background: var(--accent); opacity: 0.8; }
+  .panel-swatch {
+    width: 16px; height: 16px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .panel-swatches { display: flex; gap: 5px; flex-wrap: wrap; }
+  .panel-slider {
+    height: 3px; background: #e5e7eb; border-radius: 2px;
+    position: relative; margin-top: 2px;
+  }
+  .panel-slider::after {
+    content: ''; position: absolute; left: 0; top: 0;
+    height: 100%; width: 60%; background: var(--accent); border-radius: 2px;
+  }
+  .panel-toggle {
+    width: 28px; height: 16px; border-radius: 8px; background: var(--accent);
+    position: relative; flex-shrink: 0;
+  }
+  .panel-toggle::after {
+    content: ''; position: absolute; right: 2px; top: 2px;
+    width: 12px; height: 12px; border-radius: 50%; background: #fff;
+  }
+
+  /* ── Social proof ── */
+  .social-proof {
+    display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+    padding: 0 32px 72px;
+    max-width: 700px; margin: 0 auto;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
+  .stat-label { font-size: 13px; color: var(--sub); margin-top: 2px; }
+
+  /* ── Features ── */
+  .features {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 80px 32px;
+  }
+  .features-inner { max-width: 960px; margin: 0 auto; }
+  .section-label {
+    text-align: center; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 12px;
+  }
+  h2 {
+    text-align: center; font-size: clamp(24px, 4vw, 36px);
+    font-weight: 700; letter-spacing: -0.02em;
+    margin-bottom: 48px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .feature-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .feature-card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+  }
+  .feature-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--accent-light); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 14px;
+  }
+  .feature-title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  .feature-desc { font-size: 13.5px; color: var(--sub); line-height: 1.6; }
+
+  /* ── How it works ── */
+  .how { padding: 80px 32px; max-width: 860px; margin: 0 auto; }
+  .how h2 { margin-bottom: 48px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
+  .step { display: flex; flex-direction: column; gap: 12px; }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .step-title { font-weight: 600; font-size: 15px; }
+  .step-desc { font-size: 13.5px; color: var(--sub); line-height: 1.6; }
+
+  /* ── Presets showcase ── */
+  .presets { background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 32px; }
+  .presets-inner { max-width: 960px; margin: 0 auto; }
+  .presets h2 { margin-bottom: 8px; }
+  .presets-sub { text-align: center; color: var(--sub); font-size: 15px; margin-bottom: 40px; }
+  .presets-grid {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  }
+  .preset-chip {
+    padding: 8px 16px; border-radius: 99px;
+    border: 1.5px solid var(--border);
+    font-size: 13px; font-weight: 500;
+    cursor: default;
+    display: flex; align-items: center; gap: 7px;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .preset-chip:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(59,91,219,0.12); }
+  .preset-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── CTA section ── */
+  .cta-section {
+    padding: 96px 32px; text-align: center;
+  }
+  .cta-section h2 { margin-bottom: 16px; }
+  .cta-section p { color: var(--sub); font-size: 16px; margin-bottom: 36px; max-width: 420px; margin-left: auto; margin-right: auto; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    font-size: 13px; color: var(--sub);
+    max-width: 100%;
+  }
+  footer a { color: var(--sub); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 16px; }
+    .hero { padding: 64px 20px 56px; }
+    .preview-wrap { padding: 0 16px; }
+    .preview-panel { display: none; }
+    .social-proof { gap: 28px; }
+    .features, .how, .presets, .cta-section { padding: 56px 20px; }
+    footer { padding: 20px; flex-direction: column; text-align: center; }
+  }
+</style>
 </head>
-<body></body>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    CV Kit
+  </a>
+  <a href="CV Construction Kit v2.html" class="nav-cta">Start building →</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    Free · No sign-up required
+  </div>
+  <h1>Build a <em>beautiful CV</em><br>in minutes</h1>
+  <p class="hero-sub">
+    A powerful CV builder with real-time visual controls — layouts, colours, fonts, and sections, all live on screen.
+  </p>
+  <div class="hero-actions">
+    <a href="CV Construction Kit v2.html" class="btn-primary">
+      <span>Start building</span>
+      <span>→</span>
+    </a>
+    <a href="#features" class="btn-secondary">See features</a>
+  </div>
+  <p class="hero-note">No watermark. No account. Works in your browser.</p>
+</section>
+
+<!-- App Preview Mockup -->
+<div class="preview-wrap">
+  <div class="preview-frame">
+    <div class="preview-bar">
+      <div class="preview-bar-dot" style="background:#ff5f57"></div>
+      <div class="preview-bar-dot" style="background:#febc2e"></div>
+      <div class="preview-bar-dot" style="background:#28c840"></div>
+    </div>
+    <div class="preview-inner">
+      <!-- CV paper -->
+      <div class="preview-cv" style="display:flex;flex-direction:row">
+        <div class="preview-cv-sidebar">
+          <div class="mock-block">
+            <div class="mock-line dark" style="width:70%;color:#fff;height:10px"></div>
+            <div class="mock-line med"  style="width:50%;color:#fff"></div>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,0.2)"></div>
+          <div class="mock-block">
+            <div class="mock-line light" style="width:55%;color:#fff"></div>
+            <div class="mock-line light" style="width:70%;color:#fff"></div>
+            <div class="mock-line light" style="width:45%;color:#fff"></div>
+            <div class="mock-line light" style="width:60%;color:#fff"></div>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,0.2)"></div>
+          <div class="mock-block">
+            <div class="mock-line med" style="width:40%;color:#fff;height:6px"></div>
+            <div class="mock-tags">
+              <div class="mock-tag" style="width:44px"></div>
+              <div class="mock-tag" style="width:56px"></div>
+              <div class="mock-tag" style="width:38px"></div>
+              <div class="mock-tag" style="width:50px"></div>
+              <div class="mock-tag" style="width:62px"></div>
+            </div>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,0.2)"></div>
+          <div class="mock-block">
+            <div class="mock-line med" style="width:40%;color:#fff;height:6px"></div>
+            <div class="mock-line light" style="width:65%;color:#fff"></div>
+            <div class="mock-line light" style="width:50%;color:#fff"></div>
+          </div>
+        </div>
+        <div class="preview-cv-main">
+          <div class="mock-block" style="gap:3px">
+            <div class="mock-line" style="width:80%;height:7px;opacity:0.15"></div>
+            <div class="mock-line" style="width:55%;height:5px;opacity:0.12;background:#3B5BDB"></div>
+          </div>
+          <div style="height:1px;background:#f0f0f0"></div>
+          <div class="mock-block">
+            <div class="mock-line" style="width:35%;height:6px;opacity:0.1"></div>
+            <div class="mock-line" style="width:100%"></div>
+            <div class="mock-line" style="width:95%"></div>
+            <div class="mock-line" style="width:80%"></div>
+          </div>
+          <div class="mock-block">
+            <div class="mock-line" style="width:35%;height:6px;opacity:0.1"></div>
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <div style="flex:1" class="mock-block">
+                <div class="mock-line" style="width:90%;height:7px;opacity:0.13"></div>
+                <div class="mock-line" style="width:60%;height:5px;opacity:0.25;background:#3B5BDB"></div>
+              </div>
+              <div class="mock-line" style="width:60px;height:6px;opacity:0.08"></div>
+            </div>
+            <div class="mock-line" style="width:100%"></div>
+            <div class="mock-line" style="width:88%"></div>
+            <div class="mock-line" style="width:70%"></div>
+          </div>
+          <div class="mock-block">
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <div style="flex:1" class="mock-block">
+                <div class="mock-line" style="width:90%;height:7px;opacity:0.13"></div>
+                <div class="mock-line" style="width:55%;height:5px;opacity:0.25;background:#3B5BDB"></div>
+              </div>
+              <div class="mock-line" style="width:60px;height:6px;opacity:0.08"></div>
+            </div>
+            <div class="mock-line" style="width:100%"></div>
+            <div class="mock-line" style="width:75%"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Panel mockup -->
+      <div class="preview-panel">
+        <div style="font-size:11px;font-weight:700;color:#111;margin-bottom:2px">Construction Kit</div>
+        <div class="panel-section">
+          <div class="panel-label"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+            <div style="height:48px;border-radius:6px;background:var(--accent-light);border:1.5px solid var(--accent)"></div>
+            <div style="height:48px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+            <div style="height:48px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+            <div style="height:48px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-label"></div>
+          <div class="panel-swatches">
+            <div class="panel-swatch" style="background:#3B5BDB;outline:2px solid #3B5BDB;outline-offset:2px"></div>
+            <div class="panel-swatch" style="background:#c2410c"></div>
+            <div class="panel-swatch" style="background:#16803d"></div>
+            <div class="panel-swatch" style="background:#7c3aed"></div>
+            <div class="panel-swatch" style="background:#111"></div>
+            <div class="panel-swatch" style="background:#9a3412"></div>
+            <div class="panel-swatch" style="background:#0f766e"></div>
+            <div class="panel-swatch" style="background:#be185d"></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-label"></div>
+          <div class="panel-slider"></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-label"></div>
+          <div class="panel-row">
+            <div class="panel-chip active"></div>
+            <div class="panel-chip"></div>
+            <div class="panel-chip"></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-label"></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="height:6px;width:40%;border-radius:3px;background:#e5e7eb"></div>
+              <div class="panel-toggle"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="height:6px;width:50%;border-radius:3px;background:#e5e7eb"></div>
+              <div class="panel-toggle" style="background:#d1d5db"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="height:6px;width:35%;border-radius:3px;background:#e5e7eb"></div>
+              <div class="panel-toggle"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-label"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">
+            <div style="height:26px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+            <div style="height:26px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+            <div style="height:26px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+            <div style="height:26px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="social-proof">
+  <div class="stat">
+    <div class="stat-num">4</div>
+    <div class="stat-label">Layouts</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">8</div>
+    <div class="stat-label">Color schemes</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">6</div>
+    <div class="stat-label">Font pairings</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">10</div>
+    <div class="stat-label">Quick presets</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">∞</div>
+    <div class="stat-label">Combinations</div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="section-label">Features</div>
+    <h2>Everything you need. Nothing you don't.</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">✏️</div>
+        <div class="feature-title">Click to edit</div>
+        <div class="feature-desc">Click any text directly on the CV to edit it inline — name, title, bullets, dates, everything.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-title">Live visual controls</div>
+        <div class="feature-desc">Tweak layout, colour scheme, fonts, spacing, and dividers — changes reflect instantly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📐</div>
+        <div class="feature-title">4 layouts</div>
+        <div class="feature-desc">Classic, Sidebar Left, Sidebar Right, and Minimal — each fully customisable.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖨️</div>
+        <div class="feature-title">Print-ready PDF</div>
+        <div class="feature-desc">Hit Print / PDF and save a pixel-perfect A4 PDF directly from the browser.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">↩️</div>
+        <div class="feature-title">Undo / Redo</div>
+        <div class="feature-desc">Full history for both content edits and visual changes. ⌘Z always has your back.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <div class="feature-title">Export & Import</div>
+        <div class="feature-desc">Save your CV as a JSON file and reload it later — on any device, any time.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📸</div>
+        <div class="feature-title">Photo upload</div>
+        <div class="feature-desc">Add a profile photo — circle, square, or rounded. Stored locally, no upload to servers.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">100% private</div>
+        <div class="feature-desc">Your data never leaves your browser. No account, no tracking, no server.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Quick presets</div>
+        <div class="feature-desc">10 one-click looks: Corporate, Creative, Minimal, Academic, Dark Mode, and more.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how">
+  <div class="section-label">How it works</div>
+  <h2>Three steps to your perfect CV</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Pick a preset</div>
+      <div class="step-desc">Start with one of 10 pre-designed looks, or build your own from scratch using the controls.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Fill in your details</div>
+      <div class="step-desc">Click any text on the CV to edit it directly. Add jobs, education, skills, and custom sections.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Export</div>
+      <div class="step-desc">Save as PDF via Print, export as JSON to come back later, or copy as plain text for ATS systems.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Presets -->
+<section class="presets">
+  <div class="presets-inner">
+    <div class="section-label">Presets</div>
+    <h2>Start with a look you love</h2>
+    <p class="presets-sub">10 curated presets — one click to apply, fully tweakable afterwards.</p>
+    <div class="presets-grid">
+      <div class="preset-chip"><div class="preset-dot" style="background:#3B5BDB"></div>Corporate</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#7c3aed"></div>Creative</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#111"></div>Minimal</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#16803d"></div>Academic</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#9a3412"></div>Executive</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#c2410c"></div>Warm</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#1b1b2e"></div>Dark Mode</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#3B5BDB"></div>Banner</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#be185d"></div>Rose</div>
+      <div class="preset-chip"><div class="preset-dot" style="background:#1e2433"></div>Charcoal</div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="cta-section">
+  <div class="section-label">Get started</div>
+  <h2>Your CV is waiting.</h2>
+  <p>Free, instant, and entirely in your browser. No sign-up, no limits.</p>
+  <a href="CV Construction Kit v2.html" class="btn-primary" style="font-size:16px;padding:16px 36px">
+    Build my CV →
+  </a>
+</section>
+
+<!-- Footer -->
+<footer>
+  <span>© 2026 CV Construction Kit</span>
+  <div style="display:flex;gap:20px">
+    <a href="CV Construction Kit v2.html">Open app</a>
+    <a href="https://github.com/genesismike/cv-construction-kit" target="_blank">GitHub</a>
+  </div>
+</footer>
+
+</body>
 </html>
