@@ -11,6 +11,7 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/lz-string@1.5.0/libs/lz-string.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -799,7 +800,7 @@ function LayoutThumb({kind,active}) {
 }
 
 // ── Tweaks Panel ───────────────────────────────────────────
-function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText, onDownloadPDF, width=295}) {
+function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText, onDownloadPDF, onShare, width=295}) {
   const importRef = React.useRef(null);
   const set = (key,val) => dispatch({type:"SET_S", patch:{[key]:val}});
   const setS = (patch)  => dispatch({type:"SET_S", patch});
@@ -863,6 +864,7 @@ function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onC
         </div>
         <div style={{display:"flex",gap:5,marginTop:5}}>
           <button onClick={onCopyText} style={{flex:1,border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>⎘ Copy as text</button>
+          <button onClick={onShare} style={{flex:1,border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>🔗 Share link</button>
         </div>
         <div style={{fontSize:9.5,color:"#bbb",marginTop:6}}>Click any CV text to edit it inline</div>
       </div>
@@ -1188,6 +1190,64 @@ function reducer(state, action) {
   }
 }
 
+// ── Onboarding overlay ────────────────────────────────────
+function Onboarding({onDone}) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { icon:"✏️", title:"Click to edit", desc:"Click directly on any text in the CV — name, title, bullets, dates — to edit it inline." },
+    { icon:"🎨", title:"Tweak everything", desc:"Use the panel on the right to change layout, colours, fonts, spacing and more. Changes apply instantly." },
+    { icon:"⬇️", title:"Download your CV", desc:"Hit "Download PDF" for a pixel-perfect PDF, or export as JSON to save and reload your work later." },
+  ];
+  const cur = steps[step];
+  const last = step === steps.length - 1;
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",
+      background:"rgba(0,0,0,0.55)",backdropFilter:"blur(4px)",fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{background:"#fff",borderRadius:16,padding:"36px 32px",maxWidth:380,width:"calc(100% - 40px)",
+        boxShadow:"0 24px 80px rgba(0,0,0,0.22)",textAlign:"center",position:"relative"}}>
+        {/* Progress dots */}
+        <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:28}}>
+          {steps.map((_,i)=>(
+            <div key={i} style={{width: i===step?20:6, height:6, borderRadius:3,
+              background: i<=step?"#3B5BDB":"#e5e7eb", transition:"all 0.25s"}}/>
+          ))}
+        </div>
+        <div style={{fontSize:44,marginBottom:16,lineHeight:1}}>{cur.icon}</div>
+        <div style={{fontSize:19,fontWeight:700,letterSpacing:"-0.02em",marginBottom:10}}>{cur.title}</div>
+        <div style={{fontSize:14,color:"#6b7280",lineHeight:1.65,marginBottom:28}}>{cur.desc}</div>
+        <div style={{display:"flex",gap:10}}>
+          {step > 0 && (
+            <button onClick={()=>setStep(p=>p-1)} style={{flex:1,padding:"11px",borderRadius:9,border:"1.5px solid #e5e7eb",
+              background:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:500,color:"#374151"}}>
+              Back
+            </button>
+          )}
+          <button onClick={last ? onDone : ()=>setStep(p=>p+1)} style={{flex:1,padding:"11px",borderRadius:9,border:"none",
+            background:"#3B5BDB",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,
+            boxShadow:"0 4px 14px rgba(59,91,219,0.35)",transition:"background 0.15s"}}>
+            {last ? "Start building →" : "Next"}
+          </button>
+        </div>
+        <button onClick={onDone} style={{position:"absolute",top:14,right:14,border:"none",background:"none",
+          cursor:"pointer",color:"#9ca3af",fontSize:18,lineHeight:1,padding:4,borderRadius:4}}>×</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Share helpers ──────────────────────────────────────────
+function encodeShare(data) {
+  return LZString.compressToEncodedURIComponent(JSON.stringify(data));
+}
+function decodeShare(str) {
+  try { return JSON.parse(LZString.decompressFromEncodedURIComponent(str)); } catch { return null; }
+}
+function getShareParam() {
+  const h = window.location.hash.slice(1);
+  const p = new URLSearchParams(h);
+  return p.get("cv") || null;
+}
+
 // ── Mobile detection ───────────────────────────────────────
 function useIsMobile() {
   const [mobile, setMobile] = useState(()=>window.innerWidth < 768);
@@ -1211,10 +1271,20 @@ function App() {
     return { history:[{s:DEFAULT_SETTINGS, cv:INITIAL_CV}], idx:0 };
   };
 
-  const [state, dispatch] = useReducer(reducer, null, loadInitial);
+  const [state, dispatch] = useReducer(reducer, null, () => {
+    // If URL contains shared CV data, load it instead
+    const shared = getShareParam();
+    if(shared) {
+      const d = decodeShare(shared);
+      if(d) return { history:[{s:{...DEFAULT_SETTINGS,...(d.s||{})}, cv:{...INITIAL_CV,...(d.cv||{})}}], idx:0 };
+    }
+    return loadInitial();
+  });
   const [focusMode, setFocusMode] = useState(false);
   const [mobileTab, setMobileTab] = useState("preview");
   const isMobile = useIsMobile();
+  const [showOnboarding, setShowOnboarding] = useState(()=>!localStorage.getItem("cv-kit-onboarded"));
+  const [shareToast, setShareToast] = useState(false);
   const cur = state.history[state.idx];
   const {s, cv} = cur;
 
@@ -1316,6 +1386,15 @@ function App() {
     navigator.clipboard.writeText(lines.join("\n")).then(()=>alert("CV copied to clipboard!"));
   }, [cur, s]);
 
+  const shareCV = useCallback(() => {
+    const encoded = encodeShare({s, cv});
+    const url = window.location.href.split("#")[0] + "#cv=" + encoded;
+    navigator.clipboard.writeText(url).then(()=>{
+      setShareToast(true);
+      setTimeout(()=>setShareToast(false), 2500);
+    }).catch(()=>prompt("Copy this link:", url));
+  }, [s, cv]);
+
   const appBg = (SCHEMES[s.scheme]||SCHEMES.slate).app;
 
   const downloadPDF = useCallback(async () => {
@@ -1416,7 +1495,7 @@ function App() {
             <TweaksPanel s={s} cv={cv} dispatch={dispatch}
               canUndo={state.idx>0} canRedo={state.idx<state.history.length-1}
               onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText}
-              onDownloadPDF={downloadPDF} width={window.innerWidth}/>
+              onDownloadPDF={downloadPDF} onShare={shareCV} width={window.innerWidth}/>
           )}
         </div>
         {/* Tab bar */}
@@ -1428,6 +1507,8 @@ function App() {
           {tabBtn("preview","👁","Preview")}
           {tabBtn("style","⚙","Style")}
         </div>
+        {showOnboarding&&<Onboarding onDone={()=>{setShowOnboarding(false);localStorage.setItem("cv-kit-onboarded","1");}}/>}
+        {shareToast&&<div style={{position:"fixed",bottom:72,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",borderRadius:99,padding:"8px 18px",fontSize:12.5,fontWeight:500,fontFamily:"'DM Sans',sans-serif",zIndex:999,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",pointerEvents:"none"}}>🔗 Link copied!</div>}
       </div>
     );
   }
@@ -1447,9 +1528,11 @@ function App() {
       </div>
       <div style={{width:focusMode?0:295,overflow:"hidden",transition:"width 0.3s ease",flexShrink:0,height:"100vh"}}>
         <div style={{width:295,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column"}}>
-          <TweaksPanel s={s} cv={cv} dispatch={dispatch} canUndo={state.idx>0} canRedo={state.idx<state.history.length-1} onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText} onDownloadPDF={downloadPDF}/>
+          <TweaksPanel s={s} cv={cv} dispatch={dispatch} canUndo={state.idx>0} canRedo={state.idx<state.history.length-1} onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText} onDownloadPDF={downloadPDF} onShare={shareCV}/>
         </div>
       </div>
+      {showOnboarding&&<Onboarding onDone={()=>{setShowOnboarding(false);localStorage.setItem("cv-kit-onboarded","1");}}/>}
+      {shareToast&&<div style={{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",borderRadius:99,padding:"9px 20px",fontSize:13,fontWeight:500,fontFamily:"'DM Sans',sans-serif",zIndex:999,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",pointerEvents:"none"}}>🔗 Link copied to clipboard!</div>}
     </div>
   );
 }
