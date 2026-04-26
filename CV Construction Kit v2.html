@@ -9,6 +9,8 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -688,14 +690,14 @@ function CVPreview({s, cv, patchCV}) {
 
   // ── Layouts ──────────────────────────────────────────────
   if(s.layout==="classic") return (
-    <div style={paper}>
+    <div id="cv-paper-root" style={paper}>
       {renderHeader()}
       <div style={{padding:`${18*sp}px ${30*sp}px`}}>{mainContent}</div>
     </div>
   );
 
   if(s.layout==="minimal") return (
-    <div style={paper}>
+    <div id="cv-paper-root" style={paper}>
       <div style={{padding:`${28*sp}px ${50*sp}px ${16*sp}px`,textAlign:"center",borderBottom:`2px solid ${accent}`}}>
         {s.showPhoto&&<div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
           <PhotoUpload size={72} shape={s.photoShape} photoUrl={cv.photoUrl} onUpload={url=>patchCV(c=>{c.photoUrl=url;})} dark={false} ac={accent}/>
@@ -724,7 +726,7 @@ function CVPreview({s, cv, patchCV}) {
   );
 
   return (
-    <div style={{...paper,display:"flex",flexDirection:"column"}}>
+    <div id="cv-paper-root" style={{...paper,display:"flex",flexDirection:"column"}}>
       {usesFullHeader&&renderHeader()}
       <div style={{display:"flex",flex:1,minHeight:0}}>
         {isSL?<>{sidebarEl}{mainColEl}</>:<>{mainColEl}{sidebarEl}</>}
@@ -797,7 +799,7 @@ function LayoutThumb({kind,active}) {
 }
 
 // ── Tweaks Panel ───────────────────────────────────────────
-function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText}) {
+function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText, onDownloadPDF}) {
   const importRef = React.useRef(null);
   const set = (key,val) => dispatch({type:"SET_S", patch:{[key]:val}});
   const setS = (patch)  => dispatch({type:"SET_S", patch});
@@ -849,7 +851,10 @@ function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onC
           {iBtn("↪ Redo",()=>dispatch({type:"REDO"}),!canRedo,"Redo (⌘⇧Z)")}
           <button onClick={()=>{ if(window.confirm("Reset all CV content to the sample data?")) dispatch({type:"RESET_CV"}); }}
             style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#888",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>Reset</button>
-          <button onClick={()=>window.print()} style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 9px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",marginLeft:"auto"}}>Print / PDF</button>
+          <button onClick={()=>window.print()} style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 9px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",marginLeft:"auto"}}>🖨 Print</button>
+        </div>
+        <div style={{display:"flex",gap:5,marginTop:5}}>
+          <button onClick={onDownloadPDF} style={{flex:1,border:"1px solid #3B5BDB",borderRadius:5,padding:"4px 7px",background:"#3B5BDB",color:"#fff",fontSize:10.5,fontWeight:600,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>⬇ Download PDF</button>
         </div>
         <div style={{display:"flex",gap:5,marginTop:5}}>
           <button onClick={onExport} style={{flex:1,border:"1px solid #e0e0e0",borderRadius:5,padding:"3px 7px",background:"#fff",color:"#444",fontSize:10.5,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>⬇ Export .json</button>
@@ -1300,6 +1305,46 @@ function App() {
 
   const appBg = (SCHEMES[s.scheme]||SCHEMES.slate).app;
 
+  const downloadPDF = useCallback(async () => {
+    const el = document.getElementById("cv-paper-root");
+    if(!el) return;
+    // Disable zoom temporarily for clean capture
+    const zoomWrap = document.querySelector("#preview-wrap > div");
+    const prevZoom = zoomWrap?.style.zoom;
+    if(zoomWrap) zoomWrap.style.zoom = "1";
+    // Hide editable hover rings
+    const style = document.createElement("style");
+    style.id = "pdf-capture-style";
+    style.textContent = ".editable:hover{background:none!important;box-shadow:none!important}";
+    document.head.appendChild(style);
+    try {
+      const canvas = await window.html2canvas(el, {scale:2, useCORS:true, logging:false, backgroundColor:null});
+      const imgData = canvas.toDataURL("image/jpeg", 0.97);
+      const {jsPDF} = window.jspdf;
+      const pdf = new jsPDF({orientation:"portrait", unit:"mm", format:"a4"});
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      const iw = canvas.width / 2; // ÷ scale
+      const ih = canvas.height / 2;
+      const ratio = pw / iw;
+      const imgH = ih * ratio;
+      let pos = 0;
+      pdf.addImage(imgData, "JPEG", 0, pos, pw, imgH);
+      while(imgH + pos > ph) {
+        pos -= ph;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, pos, pw, imgH);
+      }
+      pdf.save((cv.name||"cv").replace(/\s+/g,"-").toLowerCase()+".pdf");
+    } catch(e) {
+      alert("PDF export failed. Try Print / PDF instead.");
+      console.error(e);
+    } finally {
+      if(zoomWrap && prevZoom !== undefined) zoomWrap.style.zoom = prevZoom;
+      document.getElementById("pdf-capture-style")?.remove();
+    }
+  }, [cv.name, s.zoom]);
+
   const exportJSON = useCallback(() => {
     const blob = new Blob([JSON.stringify({s, cv}, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -1340,7 +1385,7 @@ function App() {
       </div>
       <div style={{width:focusMode?0:295,overflow:"hidden",transition:"width 0.3s ease",flexShrink:0,height:"100vh"}}>
         <div style={{width:295,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column"}}>
-          <TweaksPanel s={s} cv={cv} dispatch={dispatch} canUndo={state.idx>0} canRedo={state.idx<state.history.length-1} onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText}/>
+          <TweaksPanel s={s} cv={cv} dispatch={dispatch} canUndo={state.idx>0} canRedo={state.idx<state.history.length-1} onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText} onDownloadPDF={downloadPDF}/>
         </div>
       </div>
     </div>
