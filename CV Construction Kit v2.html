@@ -799,7 +799,7 @@ function LayoutThumb({kind,active}) {
 }
 
 // ── Tweaks Panel ───────────────────────────────────────────
-function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText, onDownloadPDF}) {
+function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onCopyText, onDownloadPDF, width=295}) {
   const importRef = React.useRef(null);
   const set = (key,val) => dispatch({type:"SET_S", patch:{[key]:val}});
   const setS = (patch)  => dispatch({type:"SET_S", patch});
@@ -840,7 +840,7 @@ function TweaksPanel({s, cv, dispatch, canUndo, canRedo, onExport, onImport, onC
   );
 
   return (
-    <div id="panel" style={{width:295,flexShrink:0,background:"#f9f9f9",borderLeft:"1px solid #e5e5e5",
+    <div id="panel" style={{width,flexShrink:0,background:"#f9f9f9",borderLeft:"1px solid #e5e5e5",
       overflowY:"auto",display:"flex",flexDirection:"column"}}>
 
       {/* Header */}
@@ -1188,6 +1188,17 @@ function reducer(state, action) {
   }
 }
 
+// ── Mobile detection ───────────────────────────────────────
+function useIsMobile() {
+  const [mobile, setMobile] = useState(()=>window.innerWidth < 768);
+  useEffect(()=>{
+    const h = ()=>setMobile(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return ()=>window.removeEventListener("resize", h);
+  },[]);
+  return mobile;
+}
+
 // ── App ────────────────────────────────────────────────────
 function App() {
   // ── CV list ──────────────────────────────────────────────
@@ -1202,6 +1213,8 @@ function App() {
 
   const [state, dispatch] = useReducer(reducer, null, loadInitial);
   const [focusMode, setFocusMode] = useState(false);
+  const [mobileTab, setMobileTab] = useState("preview");
+  const isMobile = useIsMobile();
   const cur = state.history[state.idx];
   const {s, cv} = cur;
 
@@ -1371,6 +1384,55 @@ function App() {
     reader.readAsText(file);
   }, [s, cv]);
 
+  // ── Mobile layout ────────────────────────────────────────
+  if(isMobile) {
+    const mobileZoom = Math.max(35, Math.floor((window.innerWidth - 24) / 800 * 100));
+    const tabBtn = (tab, icon, label) => (
+      <button onClick={()=>setMobileTab(tab)} style={{
+        flex:1, border:"none", background:"none", cursor:"pointer",
+        display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+        padding:"8px 0 10px",
+        color: mobileTab===tab ? "#3B5BDB" : "#9ca3af",
+        fontFamily:"'DM Sans',sans-serif", fontSize:10, fontWeight: mobileTab===tab ? 600 : 400,
+        borderTop: mobileTab===tab ? "2px solid #3B5BDB" : "2px solid transparent",
+        transition:"all 0.15s",
+      }}>
+        <span style={{fontSize:18, lineHeight:1}}>{icon}</span>
+        {label}
+      </button>
+    );
+    return (
+      <div style={{display:"flex",flexDirection:"column",height:"100vh",fontFamily:"'DM Sans',sans-serif",overflow:"hidden"}}>
+        {/* Content */}
+        <div style={{flex:1,overflowY:"auto",background: mobileTab==="preview" ? appBg : "#f9f9f9"}}>
+          {mobileTab==="preview" ? (
+            <div style={{padding:"16px 12px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+              <CVSwitcher cvList={cvList} activeId={activeId} onSwitch={switchCV} onCreate={createCV} onRename={renameCV} onDelete={deleteCV}/>
+              <div style={{zoom:mobileZoom/100, width:"100%", maxWidth:800}}>
+                <CVPreview s={s} cv={cv} patchCV={patchCV}/>
+              </div>
+            </div>
+          ) : (
+            <TweaksPanel s={s} cv={cv} dispatch={dispatch}
+              canUndo={state.idx>0} canRedo={state.idx<state.history.length-1}
+              onExport={exportJSON} onImport={importJSON} onCopyText={copyAsText}
+              onDownloadPDF={downloadPDF} width={window.innerWidth}/>
+          )}
+        </div>
+        {/* Tab bar */}
+        <div style={{
+          display:"flex", background:"#fff",
+          borderTop:"1px solid #e5e5e5", flexShrink:0,
+          paddingBottom:"env(safe-area-inset-bottom, 0px)",
+        }}>
+          {tabBtn("preview","👁","Preview")}
+          {tabBtn("style","⚙","Style")}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Desktop layout ───────────────────────────────────────
   return (
     <div id="app-shell" style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"'DM Sans',sans-serif"}}>
       <div id="preview-wrap" style={{flex:1,overflowY:"auto",background:appBg,transition:"background 0.35s",padding:"24px 28px 32px",display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
